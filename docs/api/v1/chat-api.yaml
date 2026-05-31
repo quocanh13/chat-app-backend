@@ -1,0 +1,10 @@
+openapi: "3.0.3"
+
+info:
+  title: Chat API
+  version: "0.0.0"
+  description: REST API for a real-time chat application
+
+servers:
+  - url: http://localhost:3000
+    description: Local

@@ -1,0 +1,24 @@
+get:
+  tags: [user-detail]
+  summary: Get user information by username
+  responses:
+    "200":
+      description: Get user successfully
+      content:
+        application/json:
+          schema:
+            $ref: "../components/user.yaml#/components/schemas/GetResponse"
+
+    "404": 
+      description: User not found
+      content:
+        application/json:
+          schema: 
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"
+
+    "500":
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"

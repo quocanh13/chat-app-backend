@@ -1,0 +1,24 @@
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password  
+      properties:
+        username: 
+          type: string
+          example: quocanh
+        password:
+          type: string
+          example: Quocanh@13082005
+    
+    LoginResponse:
+      type: object
+      required:
+      - jwt
+      properties:
+        jwt: 
+          type: string
+
+        

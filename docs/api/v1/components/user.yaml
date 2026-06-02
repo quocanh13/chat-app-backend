@@ -1,0 +1,50 @@
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        username: 
+          type: string
+          example: quocanh
+        name: 
+          type: string
+          example: Nguyễn Quốc Anh
+        gmail: 
+          type: string
+          example: quocanh@gmail.com
+        avatar: 
+          type: string
+          example: http://localhost:3000/api/v1/file/1
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username: 
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9]+$"
+          example: "quocanh"
+        password:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "Quocanh@13082005"
+
+    GetUserResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success: 
+          type: boolean
+        detail:
+          type: string
+        data:
+          $ref: "#/components/schemas/User"
+
+    GetResponse:
+      $ref: "#/components/schemas/User"

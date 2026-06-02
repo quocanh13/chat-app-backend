@@ -1,0 +1,49 @@
+post:
+  tags: [auth]
+  summary: Login 
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../components/auth.yaml#/components/schemas/LoginRequest"
+
+  responses:
+    "200":
+      description: Login successfully
+      content:
+        application/json:
+          schema:
+            $ref: "../components/auth.yaml#/components/schemas/LoginResponse"
+
+    "400":
+      description: Invalid username or password
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"
+
+    "401":
+      description: Incorrect password
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"
+    
+    "404": 
+      description: Username does not exist
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"
+
+    "500":
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"
+
+    
+

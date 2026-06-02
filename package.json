@@ -1,0 +1,40 @@
+{
+  "name": "chat-app-backend",
+  "version": "1.0.0",
+  "description": "Backend of the web-based real-time chat application",
+  "keywords": [
+    "backend",
+    "chat-app",
+    "web",
+    "real-time"
+  ],
+  "homepage": "https://github.com/quocanh13/chat-app-backend#readme",
+  "bugs": {
+    "url": "https://github.com/quocanh13/chat-app-backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quocanh13/chat-app-backend.git"
+  },
+  "license": "ISC",
+  "author": "quocanh",
+  "type": "module",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev" : "tsx watch ./src/server.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

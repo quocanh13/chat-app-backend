@@ -10,7 +10,7 @@ post:
           $ref: "../components/user.yaml#/components/schemas/RegisterRequest"
 
   responses:
-    "204":
+    "201":
       description: Register successfully
 
     "400":

@@ -1,4 +1,5 @@
-storage/
 .env
 node_modules/
 dist/
+storage/
+/src/test/

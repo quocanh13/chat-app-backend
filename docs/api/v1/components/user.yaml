@@ -9,7 +9,7 @@ components:
         name: 
           type: string
           example: Nguyễn Quốc Anh
-        gmail: 
+        email: 
           type: string
           example: quocanh@gmail.com
         avatar: 

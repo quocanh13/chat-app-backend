@@ -23,3 +23,21 @@ export function getInsertField(
     };
 }
 
+export function getGetField(fields: string[]) : string{
+    fields = fields.map((v, i) => {
+        return `${camelToSnake(v)} as ${v}`
+    })
+    return fields.join(", ")
+}
+
+export function snakeToCamel(s: string) : string{
+    return s.replace(/_([a-z0-9])/g, (_, c)=>{
+        return c.toUpperCase();
+    })
+}
+
+export function camelToSnake(s: string) : string{
+    return s.replace(/[A-Z]/g, (c)=>{
+        return `_${c.toLowerCase()}`
+    })
+}

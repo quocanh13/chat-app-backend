@@ -5,3 +5,7 @@ export const RegisterSchema = z.object({
     password: z.string().min(1).max(30),
     name: z.string().trim().min(1).max(50).regex(/^[\p{L}\s]+$/u, "There is an invalid letter in name"),
 })
+
+export const GetUserByIdSchema = z.object({
+    id: z.coerce.number().int().positive()
+})

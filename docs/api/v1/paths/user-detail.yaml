@@ -1,6 +1,6 @@
 get:
   tags: [user-detail]
-  summary: Get user information by username
+  summary: Get user information by id
   responses:
     "200":
       description: Get user successfully
@@ -8,6 +8,13 @@ get:
         application/json:
           schema:
             $ref: "../components/user.yaml#/components/schemas/GetResponse"
+
+    "400":
+      description: Invalid data
+      content:
+        application/json:
+          schema: 
+            $ref: "../components/shared.yaml#/components/schemas/ErrorResponse"
 
     "404": 
       description: User not found

@@ -27,28 +27,6 @@ type GetUserResult<F extends UserFields[]> = {
     [K in F[number]]: User[K]
 }
 
-export async function create(user: CreateUserInput) : Promise<RepoResponse<CreateUserCode, undefined>>{
-    let success = true, code: CreateUserCode = "OK", data = undefined
-
-    const {field, placeholder, values} = getInsertField(user, ["username", "password_hash", "name"])
-    const sql = `INSERT INTO USER (${field}) VALUES (${placeholder})`
-    
-    try{
-        const res = await pool.query(sql, values)
-    } catch(err){
-        console.error(err)
-        success = false
-        const e = err as any
-        if(e?.code == "ER_DUP_ENTRY") {
-            code = "DUPLICATE_ENTRY"
-        } else {
-            code = "INTERNAL_ERROR"
-        }
-    }
-
-    return {success, code, data}
-}
-
 export async function getUserById <F extends UserFields[] >(
     id: number, 
     fields: F

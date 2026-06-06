@@ -1,9 +1,9 @@
 import {Request, Response} from "express"
-import { RegisterSchema } from "./auth.dto.js"
+import { LoginSchema, RegisterSchema } from "./auth.dto.js"
 import { ErrorResponse } from "../../shared/types.js"
 import * as authService from "./auth.service.js"
 
-export async function create(req: Request, res: Response){
+export async function register(req: Request, res: Response){
     const body = req.body
     let err_response: ErrorResponse
     const dto = RegisterSchema.safeParse(body)
@@ -39,4 +39,51 @@ export async function create(req: Request, res: Response){
     } else {
         return res.sendStatus(201)
     }
+}
+
+export async function login(req: Request, res: Response) {
+    const body = req.body
+    let err_response: ErrorResponse
+    const dto = LoginSchema.safeParse(body)
+
+    if(!dto.success){
+        err_response = {
+            error : "INVALID_DATA",
+            detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors}
+        }
+        return res.status(400).json(err_response)
+    }
+
+    const sv_res = await authService.login(dto.data)
+    if(!sv_res.success){
+        if(sv_res.code == "USERNAME_NOT_EXISTS") {
+            err_response = {
+                error: "USERNAME_NOT_EXISTS",
+                detail: {
+                    username: ["Username not exists"]
+                }
+            }
+            return res.status(404).json(err_response)
+        }
+        else if(sv_res.code == "INVALID_PASSWORD"){
+            err_response = {
+                error: "INVALID_PASSWORD",
+                detail: {
+                    password: ["Invalid password"]
+                }
+            }
+            return res.status(401).json(err_response)
+        } else {
+            err_response = {
+                error: "INTERNAL_ERROR",
+                detail: {
+                    server: ["Server error"]
+                }
+            }
+            return res.status(500).json(err_response)
+        }
+
+    } else {
+        return res.status(200).json(sv_res.data)
+    }  
 }

@@ -3,14 +3,6 @@ import pool from "../../configs/database.js";
 import { getGetField, getInsertField } from "../../utils/sql.js";
 import { RepoResponse } from "../../shared/types.js";
 
-type CreateUserCode = "DUPLICATE_ENTRY" | "INTERNAL_ERROR" | "OK";
-
-interface CreateUserInput{
-    username: string,
-    password_hash: string,
-    name: string,
-}
-
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
 type UserFields = "username" | "passwordHash" | "name" | "email" | "avatarFileId"
 
@@ -59,7 +51,6 @@ export async function getUserById <F extends UserFields[] >(
             code = "INVALID_COLUMN"
         else 
             code = "INTERNAL_ERROR"
-        
     }
     
     return {success, code, data} 

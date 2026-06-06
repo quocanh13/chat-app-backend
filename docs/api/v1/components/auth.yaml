@@ -1,5 +1,23 @@
 components:
   schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username: 
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: "^[a-zA-Z0-9]+$"
+          example: "quocanh"
+        password:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "Quocanh@13082005"
+
     LoginRequest:
       type: object
       required:

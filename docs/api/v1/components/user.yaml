@@ -16,24 +16,6 @@ components:
           type: string
           example: http://localhost:3000/api/v1/file/1
 
-    RegisterRequest:
-      type: object
-      required:
-        - username
-        - password
-      properties:
-        username: 
-          type: string
-          minLength: 1
-          maxLength: 50
-          pattern: "^[a-zA-Z0-9]+$"
-          example: "quocanh"
-        password:
-          type: string
-          minLength: 1
-          maxLength: 50
-          example: "Quocanh@13082005"
-
     GetUserResponse:
       type: object
       required:

@@ -1,7 +1,32 @@
-import {Request, Response} from "express"
+import {NextFunction, Request, Response} from "express"
 import { GetUserByIdSchema } from "./user.dto.js"
 import { ErrorResponse } from "../../shared/types.js"
 import * as userService from "./user.service.js"
+
+export function verifyUser(req: Request, res: Response, next : NextFunction){
+    const token = req.headers.authorization
+    if(token == undefined)
+        return res.status(400).json({
+            error: "INVALID_TOKEN",
+            detail : {
+                token : ["not found"]
+            }
+        })
+    
+    const payload = userService.verifyUser(token)
+    if(payload == "INVALID_TOKEN"){
+        return res.status(400).json({
+            error: "INVALID_TOKEN",
+            detail : {
+                token : ["invalid"]
+            }
+        })
+    } else {
+        req.user = payload
+        next()
+    }
+    
+}
 
 export async function getUserById(req: Request, res: Response) {
     const dto = GetUserByIdSchema.safeParse(req.params)

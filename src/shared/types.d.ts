@@ -14,3 +14,18 @@ export type ServiceResponse<Code = undefined, Data = undefined> = {
     code: Code,
     data: Data
 }
+
+interface JWTPayload {
+    username: string,
+    id: number
+}
+
+declare global {
+    namespace Express {
+        interface Request {
+            user?: JWTPayload;
+        }
+    }
+}
+
+export {};

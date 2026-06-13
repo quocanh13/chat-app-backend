@@ -32,13 +32,13 @@ export type ErrorResponse = {
     message?: string
 }
 
-export type RepoResponse<Code = undefined, Data = undefined> = {
+export type RepoResult<Code = undefined, Data = undefined> = {
     success: boolean,
     code?: Code,
     data?: Data
 }
 
-export type ServiceResponse<Code = undefined, Data = undefined> = {
+export type ServiceResult<Code = undefined, Data = undefined> = {
     success: boolean,
     code?: Code,
     data?: Data

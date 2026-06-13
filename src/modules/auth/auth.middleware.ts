@@ -5,29 +5,29 @@ import { ErrorResponse } from "../../shared/types.js"
 export function verifyUser(req: Request, res: Response, next : NextFunction){
     let token = req.headers.authorization
     token = token?.split(" ")[1]
-    let err_response : ErrorResponse
+    let errorResponse : ErrorResponse
     if(token == undefined){
-        err_response = {
+        errorResponse = {
             error : "TOKEN_NOT_FOUND",
             detail : {token : "Token not found"},
             message : "TOken not found"
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     }
     
-    const sv_res = AuthService.verifyUser(token)
-    if(!sv_res.success){
-        if(sv_res.code == "TOKEN_EXPIRED") {
-            err_response = {
+    const serviceResult = AuthService.verifyUser(token)
+    if(!serviceResult.success){
+        if(serviceResult.code == "TOKEN_EXPIRED") {
+            errorResponse = {
                 error: "TOKEN_EXPIRED",
                 detail : {
                     token : ["Token expired"]
                 },
                 message : "Token expired"
             }
-            return res.status(400).json(err_response)
+            return res.status(400).json(errorResponse)
         } else {
-            err_response = {
+            errorResponse = {
                 error: "INVALID_TOKEN",
                 detail : {
                     token : ["Invalid token"]
@@ -35,9 +35,9 @@ export function verifyUser(req: Request, res: Response, next : NextFunction){
                 message : "Invalid token"
             }
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     } else {
-        req.user = sv_res.data
+        req.user = serviceResult.data
         next()
     }
 }

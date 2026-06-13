@@ -5,43 +5,43 @@ import { CreateRoomSchema } from "./group.dto.js"
 
 export async function postGroup(req: Request, res: Response) {
     const body = req.body
-    let err_response: ErrorResponse
+    let errorResponse: ErrorResponse
     const dto = CreateRoomSchema.safeParse(body)
 
     if(!dto.success) {
-        err_response = {
+        errorResponse = {
             error : "INVALID_DATA",
             message : "Invalid data",
             detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors}
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     }
 
-    const sv_res = await GroupService.createGroup(dto.data)
-    if(sv_res.success) {
-        res.status(201).json({id: sv_res.data?.id})
+    const serviceResult = await GroupService.createGroup(dto.data)
+    if(serviceResult.success) {
+        res.status(201).json({id: serviceResult.data?.id})
     }
 
-    if(sv_res.code == "NAME_TOO_LONG"){
-        err_response = {
+    if(serviceResult.code == "NAME_TOO_LONG"){
+        errorResponse = {
             error : "INVALID_DATA",
             message : "Name is too long",
             detail : {name : ["Name is too long"]}
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     } 
-    if(sv_res.code == "INVALID_GROUP_TYPE") {
-        err_response = {
+    if(serviceResult.code == "INVALID_GROUP_TYPE") {
+        errorResponse = {
             error : "INVALID_DATA",
             message : "Invalid group type",
             detail : {type : ["Type must be direct or group"]}
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     }
-    err_response = {
+    errorResponse = {
         error : "SERVER_ERROR",
         message : "Server error",
         detail : {server : ["Server error"]}
     }
-    return res.status(500).json(err_response)
+    return res.status(500).json(errorResponse)
 }

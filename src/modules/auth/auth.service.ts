@@ -1,4 +1,4 @@
-import { JWTPayload, ServiceResponse } from "../../shared/types.js"
+import { JWTPayload, ServiceResult } from "../../shared/types.js"
 import * as hash from "../../utils/hash.js"
 import * as AuthRepo from "./auth.repository.js"
 import { sign, verify } from "../../utils/jwt.js"
@@ -18,7 +18,7 @@ interface LoginInput{
 }
 
 
-export async function register(input: RegisterInput) : Promise<ServiceResponse<RegisterCode | undefined>>{
+export async function register(input: RegisterInput) : Promise<ServiceResult<RegisterCode | undefined>>{
     let success = false
     let code: RegisterCode | undefined = undefined
     let data = undefined 
@@ -70,7 +70,7 @@ export async function login(input: LoginInput) {
     return {success, code, data}
 }
 
-export function verifyUser(token: string) : ServiceResponse<VerifyUserCode, JWTPayload>{
+export function verifyUser(token: string) : ServiceResult<VerifyUserCode, JWTPayload>{
     let success = false
     let code: VerifyUserCode | undefined = undefined
     let data = undefined

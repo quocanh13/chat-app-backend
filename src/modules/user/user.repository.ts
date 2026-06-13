@@ -1,7 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from "mysql2"
 import pool from "../../configs/database.js";
 import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
-import { RepoResponse, User, UserFields, FileFields, File } from "../../shared/types.js";
+import { RepoResult, User, UserFields, FileFields, File } from "../../shared/types.js";
 
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
 
@@ -22,7 +22,7 @@ type GetUserResult<F extends UserFields[]> = {
 export async function getUserById <F extends UserFields[] >(
     id: number, 
     fields: F
-) : Promise<RepoResponse<GetUserByIdCode, GetUserResult<F> | undefined>> {
+) : Promise<RepoResult<GetUserByIdCode, GetUserResult<F> | undefined>> {
 
     let success = false
     let code: GetUserByIdCode = "OK"
@@ -58,7 +58,7 @@ export async function getUserById <F extends UserFields[] >(
 export async function updateUser(
     user: UpdateUserInput, 
     fields: UserFields[] | undefined = undefined
-) : Promise<RepoResponse<UpdateUserCode>> {
+) : Promise<RepoResult<UpdateUserCode>> {
 
     let success = false
     let code: UpdateUserCode = "OK"

@@ -1,6 +1,6 @@
 import * as UserRepo from "./user.repository.js"
 import { idToURL } from "../../utils/file.js"
-import { FilePermission, ServiceResponse } from "../../shared/types.js"
+import { FilePermission, ServiceResult } from "../../shared/types.js"
 import {getFilePermission} from "../file/index.js"
 
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR"
@@ -22,7 +22,7 @@ interface UpdateUserInput{
     avatarFileId?: number | null
 }
 
-export async function getUserById(id: number) : Promise<ServiceResponse<GetUserByIdCode,  GetUserData>> {
+export async function getUserById(id: number) : Promise<ServiceResult<GetUserByIdCode,  GetUserData>> {
     let success = false
     let code: GetUserByIdCode | undefined = undefined
     let data = undefined
@@ -48,7 +48,7 @@ export async function getUserById(id: number) : Promise<ServiceResponse<GetUserB
 
 
 
-export async function updateUser(user: UpdateUserInput) : Promise<ServiceResponse<UpdateUserCode>> {
+export async function updateUser(user: UpdateUserInput) : Promise<ServiceResult<UpdateUserCode>> {
     let success = false
     let code: UpdateUserCode | undefined = undefined
     let data = undefined

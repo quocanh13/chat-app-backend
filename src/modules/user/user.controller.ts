@@ -6,142 +6,142 @@ import { updateUser } from "./user.repository.js"
 
 export async function getUserById(req: Request, res: Response) {
     const dto = GetUserByIdSchema.safeParse(req.params)
-    let err_response: ErrorResponse
+    let errorResponse: ErrorResponse
 
     if(!dto.success){
 
-        err_response = {
+        errorResponse = {
             error : "INVALID_DATA",
             detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors},
             message : "Invalid data"
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
 
     }
 
-    const sv_res = await UserService.getUserById(dto.data.id)
+    const serviceResult = await UserService.getUserById(dto.data.id)
 
-    if(!sv_res.success){
-        if(sv_res.code == "USER_NOT_FOUND") {
+    if(!serviceResult.success){
+        if(serviceResult.code == "USER_NOT_FOUND") {
 
-            err_response = {
+            errorResponse = {
                 error: "NOT_FOUND",
                 detail: {
                     id: ["Not found"]
                 },
                 message : `User with ${dto.data.id} not found`
             }
-            return res.status(404).json(err_response)
+            return res.status(404).json(errorResponse)
 
         } else {
-            err_response = {
+            errorResponse = {
                 error: "INTERNAL_ERROR",
                 detail: {server : ["Server error"]},
                 message : "Server error"
             }
-            return res.status(500).json(err_response)
+            return res.status(500).json(errorResponse)
         }
 
     } else {
-        return res.status(200).json(sv_res.data)
+        return res.status(200).json(serviceResult.data)
     }
 }
 
 export async function putUser(req: Request, res: Response) {
-    let err_response: ErrorResponse
+    let errorResponse: ErrorResponse
     const id = Number(req.params.id)
     const data = {...req.body, id}
     const dto = PutUserSchema.safeParse(data)
     if(id != req.user!.id) {
-        err_response = {
+        errorResponse = {
             error : "ACCESS_DENIED",
             detail : {
                 id : [`User ID in the URL (${id}) does not match the authenticated user ID (${req.user!.id})`]
             },
             message : "You do not have permission to update this resource."
         }
-        return res.status(401).json(err_response)
+        return res.status(401).json(errorResponse)
     }
     if(!dto.success){
-        err_response = {
+        errorResponse = {
             error : "INVALID_DATA",
             detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors},
             message : "Invalid data"
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     }
 
-    const sv_res = await UserService.updateUser(dto.data)
-    if(sv_res.success) {
+    const serviceResult = await UserService.updateUser(dto.data)
+    if(serviceResult.success) {
         return res.sendStatus(204)
     }
     
-    if(sv_res.code == "USER_NOT_FOUND"){
-        err_response = {
+    if(serviceResult.code == "USER_NOT_FOUND"){
+        errorResponse = {
             error : "USER_NOT_FOUND",
             detail : {id : ["Not found"]},
             message : `User with id = ${id} not found`
         }
-        return res.status(404).json(err_response)
-    } else if(sv_res.code == "AVATAR_ACCESS_DENIED") {
-        err_response = {
+        return res.status(404).json(errorResponse)
+    } else if(serviceResult.code == "AVATAR_ACCESS_DENIED") {
+        errorResponse = {
             error : "AVATAR_ACCESS_DENIED",
             detail : {avatarFileId : [`You do not have the permisson to access the file with id = ${dto.data.avatarFileId}`]},
             message : `You do not have the permisson to access the file with id = ${dto.data.avatarFileId}`
         }
-        return res.status(404).json(err_response)
+        return res.status(404).json(errorResponse)
     } else {
-        err_response = {
+        errorResponse = {
             error : "SERVER_ERROR",
             detail : {server : ["Server error"]},
             message : `Server error`
         }
-        return res.status(500).json(err_response)
+        return res.status(500).json(errorResponse)
     }
 }
 
 export async function patchUser(req: Request, res: Response) {
-    let err_response: ErrorResponse
+    let errorResponse: ErrorResponse
     const id = Number(req.params.id)
     const data = {...req.body, id}
     const dto = PatchUserSchema.safeParse(data)
     if(id != req.user!.id) {
-        err_response = {
+        errorResponse = {
             error : "ACCESS_DENIED",
             detail : {
                 id : [`User ID in the URL (${id}) does not match the authenticated user ID (${req.user!.id})`]
             },
             message : "You do not have permission to update this resource."
         }
-        return res.status(401).json(err_response)
+        return res.status(401).json(errorResponse)
     }
     if(!dto.success){
-        err_response = {
+        errorResponse = {
             error : "INVALID_DATA",
             detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors},
             message : "Invalid data"
         }
-        return res.status(400).json(err_response)
+        return res.status(400).json(errorResponse)
     }
 
-    const sv_res = await updateUser(dto.data)
-    if(sv_res.success) {
+    const serviceResult = await updateUser(dto.data)
+    if(serviceResult.success) {
         return res.sendStatus(204)
     }
 
-    if(sv_res.code == "USER_NOT_FOUND"){
-        err_response = {
+    if(serviceResult.code == "USER_NOT_FOUND"){
+        errorResponse = {
             error : "USER_NOT_FOUND",
             detail : {id : ["Not found"]},
             message : `User with id = ${id} not found`
         }
-        return res.status(404).json(err_response)
+        return res.status(404).json(errorResponse)
     } else {
-        err_response = {
+        errorResponse = {
             error : "SERVER_ERROR",
             detail : {server : ["Server error"]},
             message : `Server error`
         }
-        return res.status(404).json(err_response)
+        return res.status(404).json(errorResponse)
     }
 }

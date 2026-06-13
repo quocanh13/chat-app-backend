@@ -1,7 +1,7 @@
 import { RowDataPacket } from "mysql2";
 import pool from "../../configs/database.js";
 import { getInsertField } from "../../utils/sql.js";
-import { RepoResponse, UserFields, User } from "../../shared/types.js";
+import { RepoResult, UserFields, User } from "../../shared/types.js";
 import { getGetField } from "../../utils/sql.js";
 
 type CreateUserCode = "DUPLICATE_ENTRY" | "INTERNAL_ERROR" | "OK";
@@ -15,7 +15,7 @@ interface CreateUserInput{
 export async function createUser(
     user: CreateUserInput, 
     fields: UserFields[] | undefined = undefined
-) : Promise<RepoResponse<CreateUserCode, undefined>>{
+) : Promise<RepoResult<CreateUserCode, undefined>>{
     let success = false, code: CreateUserCode = "OK", data = undefined
 
     const {field, placeholder, values} = getInsertField(user, fields)
@@ -44,7 +44,7 @@ type GetUserResult<F extends UserFields[]> = {
 export async function getUserByUsername <F extends UserFields[] >(
     username: string, 
     fields: F
-) : Promise<RepoResponse<GetUserByIdCode, GetUserResult<F> | undefined>> {
+) : Promise<RepoResult<GetUserByIdCode, GetUserResult<F> | undefined>> {
 
     let success = false
     let code: GetUserByIdCode = "OK"

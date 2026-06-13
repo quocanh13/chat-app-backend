@@ -1,7 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from "mysql2"
 import pool from "../../configs/database.js";
 import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
-import { RepoResponse, User, UserFields, FileFields, File } from "../../shared/types.js";
+import { RepoResult, User, UserFields, FileFields, File } from "../../shared/types.js";
 
 
 type GetFileByIdCode = "FILE_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
@@ -13,7 +13,7 @@ type GetFileResult<F extends FileFields[]> = {
 export async function getFileById <F extends FileFields[]>(
     id: number,
     fields : F
-): Promise<RepoResponse<GetFileByIdCode, GetFileResult<F> | undefined>> {
+): Promise<RepoResult<GetFileByIdCode, GetFileResult<F> | undefined>> {
     let success = false
     let code: GetFileByIdCode = "OK"
     let data: GetFileResult<F> | undefined = undefined

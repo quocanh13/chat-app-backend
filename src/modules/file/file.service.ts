@@ -5,9 +5,9 @@ export async function getFilePermission(userId : number, fileId: number) : Promi
     const permission : FilePermission = {
         read : false, update : false, delete : false
     }
-    const repo = await FileRepo.getFileById(fileId, ["userId"])
-    if(repo.success){
-        if(repo.data?.userId == userId){
+    const repoResult = await FileRepo.getFileById(fileId, ["userId"])
+    if(repoResult.success){
+        if(repoResult.data?.userId == userId){
             permission.read = true;
             permission.update = true;
             permission.delete = true;

@@ -5,7 +5,7 @@ import { RepoResult } from "../../shared/types.js";
 import { PoolConnection } from "mysql2/promise";
 
 
-type CreateGroupCode = "NAME_TOO_LONG" | "INVALID_GROUP_TYPE" | "INTERNAL_ERROR" 
+type CreateGroupCode = "GROUP_NAME_TOO_LONG" | "INVALID_GROUP_TYPE" | "INTERNAL_ERROR" 
 type CreateUserInGroupCode =  "INVALID_ROLE" | "USER_ALREADY_IN_ROOM" | "USER_OR_GROUP_NOT_EXIST" | "INTERNAL_ERROR"
 
 interface CreateGroupInput {
@@ -41,7 +41,7 @@ export async function createGroup(
     } catch(err){
         const e = err as any
         if(e.code == "ER_DATA_TOO_LONG"){
-            code = "NAME_TOO_LONG"
+            code = "GROUP_NAME_TOO_LONG"
         } else if(e.code == "WARN_DATA_TRUNCATED"){
             code = "INVALID_GROUP_TYPE"
         } else {

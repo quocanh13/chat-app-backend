@@ -1,23 +1,35 @@
 import { PoolConnection } from "mysql2/promise";
 import pool from "./database.js";
 
-export async function queryTransaction<T>(
-    callback: (connection : PoolConnection)=>T
-) : Promise<T> {
-    const conn = await pool.getConnection();
+type TransactionResult<Code = undefined, Data = undefined> = {
+    success : boolean,
+    code?: "INTERNAL_ERROR" | Code,
+    data?: Data
+}
+
+export async function queryTransaction<Code = undefined, Data = undefined>(
+    callback: (connection: PoolConnection) => Promise<TransactionResult<Code, Data>>
+) : Promise<TransactionResult<Code, Data>> {
+    const connection = await pool.getConnection();
 
     try {
-        await conn.beginTransaction();
+        await connection.beginTransaction();
 
-        const result = await callback(conn);
+        const result = await callback(connection);
 
-        await conn.commit();
+        if (result.success) {
+            await connection.commit();
+        } else {
+            await connection.rollback();
+        }
 
         return result;
-    } catch (err) {
-        await conn.rollback();
-        throw err;
+    } catch(err) {
+        console.log(err)
+        await connection.rollback();
+        return {success : false, code : "INTERNAL_ERROR"}
     } finally {
-        conn.release();
+        connection.release();
     }
 }
+

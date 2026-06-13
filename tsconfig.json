@@ -6,6 +6,9 @@
     "rootDirs": ["./src"],
     "rootDir": "./src",
     "outDir": "./dist",
-    "strict": true
+    "paths": {
+        "auth" : ["./src/modules/auth/index.ts"]
+    },
+    "strict": true,
   }
 }

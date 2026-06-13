@@ -10,7 +10,7 @@ export function verifyUser(req: Request, res: Response, next : NextFunction){
         errorResponse = {
             error : "TOKEN_NOT_FOUND",
             detail : {token : "Token not found"},
-            message : "TOken not found"
+            message : "Token not found"
         }
         return res.status(400).json(errorResponse)
     }

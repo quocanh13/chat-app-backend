@@ -61,7 +61,7 @@ export async function login(req: Request, res: Response) {
             err_response = {
                 error: "USERNAME_NOT_EXISTS",
                 detail: {
-                    username: ["Username not exists"]
+                    username: ["Username does not exists"]
                 },
                 message : "Username does not exist"
             }

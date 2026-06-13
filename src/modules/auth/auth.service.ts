@@ -1,15 +1,23 @@
-import { email } from "zod"
-import { ServiceResponse } from "../../shared/types.js"
+import { JWTPayload, ServiceResponse } from "../../shared/types.js"
 import * as hash from "../../utils/hash.js"
 import * as AuthRepo from "./auth.repository.js"
-import { sign } from "../../utils/jwt.js"
+import { sign, verify } from "../../utils/jwt.js"
+
+type RegisterCode = "USERNAME_EXISTS" | "INTERNAL_ERROR"
+type LoginCode = "USERNAME_NOT_EXISTS" | "INVALID_PASSWORD" | "INTERNAL_ERROR"
+type VerifyUserCode = "INVALID_TOKEN" | "TOKEN_EXPIRED"
 
 interface RegisterInput{
     username: string,
     password: string,
     name: string
 }
-type RegisterCode = "USERNAME_EXISTS" | "INTERNAL_ERROR"
+interface LoginInput{
+    username: string,
+    password: string, 
+}
+
+
 export async function register(input: RegisterInput) : Promise<ServiceResponse<RegisterCode | undefined>>{
     let success = false
     let code: RegisterCode | undefined = undefined
@@ -32,11 +40,6 @@ export async function register(input: RegisterInput) : Promise<ServiceResponse<R
     return {success, code, data}
 }
 
-interface LoginInput{
-    username: string,
-    password: string, 
-}
-type LoginCode = "USERNAME_NOT_EXISTS" | "INVALID_PASSWORD" | "INTERNAL_ERROR"
 export async function login(input: LoginInput) {
     let success = false
     let code: LoginCode | undefined = undefined
@@ -63,6 +66,22 @@ export async function login(input: LoginInput) {
                 code = "INVALID_PASSWORD"
             }
         }
+    }
+    return {success, code, data}
+}
+
+export function verifyUser(token: string) : ServiceResponse<VerifyUserCode, JWTPayload>{
+    let success = false
+    let code: VerifyUserCode | undefined = undefined
+    let data = undefined
+    const payload = verify(token)
+    if(payload == "INVALID_TOKEN")
+        code = "INVALID_TOKEN"
+    else if(payload == "TOKEN_EXPIRED")
+        code = "TOKEN_EXPIRED"
+    else{
+        success = true
+        data = payload
     }
     return {success, code, data}
 }

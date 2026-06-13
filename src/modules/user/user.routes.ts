@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { getUserById, patchUser, putUser, verifyUser } from "./user.controller.js";
+import { getUserById, patchUser, putUser } from "./user.controller.js";
+import { verifyUser } from "../auth/index.js"
 
 const router = Router()
 

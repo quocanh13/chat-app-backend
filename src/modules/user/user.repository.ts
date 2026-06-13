@@ -13,7 +13,7 @@ interface UpdateUserInput{
     passwordHash?: string,
     email?: string,
     name?: string,
-    avatarFileId?: number
+    avatarFileId?: number | null
 }
 
 type GetUserResult<F extends UserFields[]> = {
@@ -83,7 +83,7 @@ export async function updateUser(
         }
     } catch(err){
         const e = err as any
-
+        console.log(err)
         if(e?.code == "ER_PARSE_ERROR")
             code = "SYNTAX_ERROR"
         else if(e?.code == "ER_BAD_FIELD_ERROR")
@@ -94,7 +94,6 @@ export async function updateUser(
             console.error(err)
             code = "INTERNAL_ERROR"
     }
-    
     return {success, code, data} 
 }
 

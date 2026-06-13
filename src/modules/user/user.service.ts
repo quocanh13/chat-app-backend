@@ -1,10 +1,8 @@
 import * as UserRepo from "./user.repository.js"
 import { idToURL } from "../../utils/file.js"
-import { verify } from "../../utils/jwt.js"
-import { FilePermission, ServiceResponse, JWTPayload } from "../../shared/types.js"
+import { FilePermission, ServiceResponse } from "../../shared/types.js"
 
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR"
-type VerifyUserCode = "INVALID_TOKEN" | "TOKEN_EXPIRED"
 type UpdateUserCode = "USER_NOT_FOUND" | "INVALID_DATA" | "AVATAR_ACCESS_DENIED" | "INTERNAL_ERROR" | "EMPTY_FIELD"
 
 interface GetUserData{
@@ -21,22 +19,6 @@ interface UpdateUserInput{
     email?: string,
     name?: string,
     avatarFileId?: number
-}
-
-export function verifyUser(token: string) : ServiceResponse<VerifyUserCode, JWTPayload>{
-    let success = false
-    let code: VerifyUserCode | undefined = undefined
-    let data = undefined
-    const payload = verify(token)
-    if(payload == "INVALID_TOKEN")
-        code = "INVALID_TOKEN"
-    else if(payload == "TOKEN_EXPIRED")
-        code = "TOKEN_EXPIRED"
-    else{
-        success = true
-        data = payload
-    }
-    return {success, code, data}
 }
 
 export async function getUserById(id: number) : Promise<ServiceResponse<GetUserByIdCode,  GetUserData>> {
@@ -82,7 +64,6 @@ export async function updateUser(user: UpdateUserInput) : Promise<ServiceRespons
     let success = false
     let code: UpdateUserCode | undefined = undefined
     let data = undefined
-
     if(user.avatarFileId != undefined){
         const permission = await getFilePermission(user.id, user.avatarFileId)
         if(!permission.read){

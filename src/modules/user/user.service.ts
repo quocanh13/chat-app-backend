@@ -1,6 +1,7 @@
 import * as UserRepo from "./user.repository.js"
 import { idToURL } from "../../utils/file.js"
 import { FilePermission, ServiceResponse } from "../../shared/types.js"
+import {getFilePermission} from "../file/index.js"
 
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR"
 type UpdateUserCode = "USER_NOT_FOUND" | "INVALID_DATA" | "AVATAR_ACCESS_DENIED" | "INTERNAL_ERROR" | "EMPTY_FIELD"
@@ -18,7 +19,7 @@ interface UpdateUserInput{
     passwordHash?: string,
     email?: string,
     name?: string,
-    avatarFileId?: number
+    avatarFileId?: number | null
 }
 
 export async function getUserById(id: number) : Promise<ServiceResponse<GetUserByIdCode,  GetUserData>> {
@@ -45,26 +46,13 @@ export async function getUserById(id: number) : Promise<ServiceResponse<GetUserB
     return {success, code, data}
 }
 
-async function getFilePermission(userId : number, fileId: number) : Promise<FilePermission> {
-    const permission : FilePermission = {
-        read : false, update : false, delete : false
-    }
-    const repo = await UserRepo.getFileById(fileId, ["userId"])
-    if(repo.success){
-        if(repo.data?.userId == userId){
-            permission.read = true;
-            permission.update = true;
-            permission.delete = true;
-        }
-    }
-    return permission
-}
+
 
 export async function updateUser(user: UpdateUserInput) : Promise<ServiceResponse<UpdateUserCode>> {
     let success = false
     let code: UpdateUserCode | undefined = undefined
     let data = undefined
-    if(user.avatarFileId != undefined){
+    if(user.avatarFileId != undefined && user.avatarFileId != null){
         const permission = await getFilePermission(user.id, user.avatarFileId)
         if(!permission.read){
             code = "AVATAR_ACCESS_DENIED"

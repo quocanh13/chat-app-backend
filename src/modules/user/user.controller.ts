@@ -62,7 +62,6 @@ export async function putUser(req: Request, res: Response) {
         }
         return res.status(401).json(err_response)
     }
-    // console.log(dto)
     if(!dto.success){
         err_response = {
             error : "INVALID_DATA",
@@ -72,7 +71,7 @@ export async function putUser(req: Request, res: Response) {
         return res.status(400).json(err_response)
     }
 
-    const sv_res = await updateUser(dto.data)
+    const sv_res = await UserService.updateUser(dto.data)
     if(sv_res.success) {
         return res.sendStatus(204)
     }
@@ -82,6 +81,13 @@ export async function putUser(req: Request, res: Response) {
             error : "USER_NOT_FOUND",
             detail : {id : ["Not found"]},
             message : `User with id = ${id} not found`
+        }
+        return res.status(404).json(err_response)
+    } else if(sv_res.code == "AVATAR_ACCESS_DENIED") {
+        err_response = {
+            error : "AVATAR_ACCESS_DENIED",
+            detail : {avatarFileId : [`You do not have the permisson to access the file with id = ${dto.data.avatarFileId}`]},
+            message : `You do not have the permisson to access the file with id = ${dto.data.avatarFileId}`
         }
         return res.status(404).json(err_response)
     } else {

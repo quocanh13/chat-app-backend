@@ -1,0 +1,1 @@
+export { getFilePermission } from "./file.service.js";

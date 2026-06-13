@@ -1,0 +1,1 @@
+export {default as groupRouter} from "./group.routes.js"

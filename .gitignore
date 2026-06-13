@@ -3,3 +3,4 @@ node_modules/
 dist/
 storage/
 /src/test/
+sql/

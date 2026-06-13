@@ -1,4 +1,4 @@
-import * as userRepo from "./user.repository.js"
+import * as UserRepo from "./user.repository.js"
 import { idToURL } from "../../utils/file.js"
 import { verify } from "../../utils/jwt.js"
 import { FilePermission, ServiceResponse, JWTPayload } from "../../shared/types.js"
@@ -44,7 +44,7 @@ export async function getUserById(id: number) : Promise<ServiceResponse<GetUserB
     let code: GetUserByIdCode | undefined = undefined
     let data = undefined
 
-    const res = await userRepo.getUserById(id, ["username", "name", "avatarFileId", "email"])
+    const res = await UserRepo.getUserById(id, ["username", "name", "avatarFileId", "email"])
     if(res.success) {
         success = true 
         data = {
@@ -67,7 +67,7 @@ async function getFilePermission(userId : number, fileId: number) : Promise<File
     const permission : FilePermission = {
         read : false, update : false, delete : false
     }
-    const repo = await userRepo.getFileById(fileId, ["userId"])
+    const repo = await UserRepo.getFileById(fileId, ["userId"])
     if(repo.success){
         if(repo.data?.userId == userId){
             permission.read = true;
@@ -91,7 +91,7 @@ export async function updateUser(user: UpdateUserInput) : Promise<ServiceRespons
         }
     }
 
-    const repo_res = await userRepo.updateUser(user)
+    const repo_res = await UserRepo.updateUser(user)
     if(!repo_res.success){
         if(repo_res.code == "USER_NOT_FOUND")
             code = "USER_NOT_FOUND"

@@ -1,7 +1,7 @@
 import { email } from "zod"
 import { ServiceResponse } from "../../shared/types.js"
 import * as hash from "../../utils/hash.js"
-import * as authRepo from "./auth.repository.js"
+import * as AuthRepo from "./auth.repository.js"
 import { sign } from "../../utils/jwt.js"
 
 interface RegisterInput{
@@ -20,7 +20,7 @@ export async function register(input: RegisterInput) : Promise<ServiceResponse<R
         passwordHash: await hash.hash(input.password),
         name: input.name
     }
-    const res = await authRepo.createUser(user, ["username", "passwordHash", "name"])
+    const res = await AuthRepo.createUser(user, ["username", "passwordHash", "name"])
     if(res.success)
         success = true 
     else
@@ -42,7 +42,7 @@ export async function login(input: LoginInput) {
     let code: LoginCode | undefined = undefined
     let data = undefined 
 
-    const repo_res = await authRepo.getUserByUsername(input.username, ["passwordHash", "id"])
+    const repo_res = await AuthRepo.getUserByUsername(input.username, ["passwordHash", "id"])
     if(!repo_res.success){
         if(repo_res.code == "USER_NOT_FOUND")
             code = "USERNAME_NOT_EXISTS"

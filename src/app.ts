@@ -1,6 +1,7 @@
 import express from "express"
 import { userRouter } from "./modules/user/index.js"
 import { authRouter } from "./modules/auth/index.js"
+import { groupRouter } from "./modules/group/index.js"
 
 const app = express()
 
@@ -11,8 +12,9 @@ app.use("/", (req, res, next)=>{
     next()
 })
 
-app.use(userRouter)
 app.use(authRouter)
+app.use(userRouter)
+app.use(groupRouter)
 
 export default app
 

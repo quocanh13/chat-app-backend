@@ -1,50 +1,40 @@
 import { RowDataPacket } from "mysql2";
 import pool from "../../configs/database.js";
 import { getInsertField } from "../../utils/sql.js";
-import { RepoResponse } from "../../shared/types.js";
+import { RepoResponse, UserFields, User } from "../../shared/types.js";
 import { getGetField } from "../../utils/sql.js";
 
 type CreateUserCode = "DUPLICATE_ENTRY" | "INTERNAL_ERROR" | "OK";
-
+type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
 interface CreateUserInput{
     username: string,
-    password_hash: string,
+    passwordHash: string,
     name: string,
 }
 
-export async function create(user: CreateUserInput) : Promise<RepoResponse<CreateUserCode, undefined>>{
-    let success = true, code: CreateUserCode = "OK", data = undefined
+export async function createUser(
+    user: CreateUserInput, 
+    fields: UserFields[] | undefined = undefined
+) : Promise<RepoResponse<CreateUserCode, undefined>>{
+    let success = false, code: CreateUserCode = "OK", data = undefined
 
-    const {field, placeholder, values} = getInsertField(user, ["username", "password_hash", "name"])
+    const {field, placeholder, values} = getInsertField(user, fields)
     const sql = `INSERT INTO USER (${field}) VALUES (${placeholder})`
     
     try{
         const res = await pool.query(sql, values)
+        success = true
     } catch(err){
-        console.error(err)
-        success = false
         const e = err as any
         if(e?.code == "ER_DUP_ENTRY") {
             code = "DUPLICATE_ENTRY"
         } else {
+            console.error(err)
             code = "INTERNAL_ERROR"
         }
     }
 
     return {success, code, data}
-}
-
-
-type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
-type UserFields = "username" | "passwordHash" | "name" | "email" | "avatarFileId"
-
-interface User{
-    id: number
-    username: string,
-    passwordHash: string,
-    email: string,
-    name: string,
-    avatarFileId: number
 }
 
 type GetUserResult<F extends UserFields[]> = {
@@ -56,7 +46,7 @@ export async function getUserByUsername <F extends UserFields[] >(
     fields: F
 ) : Promise<RepoResponse<GetUserByIdCode, GetUserResult<F> | undefined>> {
 
-    let success = true
+    let success = false
     let code: GetUserByIdCode = "OK"
     let data: GetUserResult<F> | undefined = undefined
 
@@ -67,23 +57,25 @@ export async function getUserByUsername <F extends UserFields[] >(
     try{
         const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [username])
         if(rows.length == 0) {
-            success = false
             code = "USER_NOT_FOUND"
         } else {
+            success = true
             data = rows[0] as GetUserResult<F>
         }
     } catch(err){
-        console.error(err)
-        success = false
+        
         const e = err as any
 
         if(e?.code == "ER_PARSE_ERROR")
             code = "SYNTAX_ERROR"
         else if(e?.code == "ER_BAD_FIELD_ERROR")
             code = "INVALID_COLUMN"
-        else 
+        else {
+            console.error(err)
             code = "INTERNAL_ERROR"
+        }
     }
     
     return {success, code, data} 
 }
+

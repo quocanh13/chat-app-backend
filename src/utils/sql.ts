@@ -1,16 +1,29 @@
+export function snakeToCamel(s: string) : string{
+    return s.replace(/_([a-z0-9])/g, (_, c)=>{
+        return c.toUpperCase();
+    })
+}
+
+export function camelToSnake(s: string) : string{
+    return s.replace(/[A-Z]/g, (c)=>{
+        return `_${c.toLowerCase()}`
+    })
+}
+
 export function getInsertField(
     data: Record<string, any>,
-    keys: string[]
+    keys: string[] | undefined = undefined
 ) {
     const fields: string[] = [];
     const placeholders: string[] = [];
     const values: any[] = [];
 
+    keys ??= Object.keys(data); 
     for (const key of keys) {
         const value = data[key];
-
+        
         if (value != null) {
-            fields.push(key);
+            fields.push(camelToSnake(key));
             placeholders.push("?");
             values.push(value);
         }
@@ -30,14 +43,24 @@ export function getGetField(fields: string[]) : string{
     return fields.join(", ")
 }
 
-export function snakeToCamel(s: string) : string{
-    return s.replace(/_([a-z0-9])/g, (_, c)=>{
-        return c.toUpperCase();
-    })
-}
+export function getUpdateField(
+    data: Record<string, any>,
+    keys: string[] | undefined = undefined
+) {
+    const fields: string[] = [];
+    const values: any[] = [];
 
-export function camelToSnake(s: string) : string{
-    return s.replace(/[A-Z]/g, (c)=>{
-        return `_${c.toLowerCase()}`
-    })
+    keys ??= Object.keys(data); 
+    for (const key of keys) {
+        const value = data[key];
+        if (value != null) {
+            fields.push(`${camelToSnake(key)} = ?`);
+            values.push(value);
+        }
+    }
+
+    return {
+        field: fields.join(", "),
+        values
+    };
 }

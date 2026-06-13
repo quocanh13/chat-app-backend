@@ -17,10 +17,10 @@ export async function register(input: RegisterInput) : Promise<ServiceResponse<R
 
     const user = {
         username: input.username,
-        password_hash: await hash.hash(input.password),
+        passwordHash: await hash.hash(input.password),
         name: input.name
     }
-    const res = await authRepo.create(user)
+    const res = await authRepo.createUser(user, ["username", "passwordHash", "name"])
     if(res.success)
         success = true 
     else
@@ -42,7 +42,7 @@ export async function login(input: LoginInput) {
     let code: LoginCode | undefined = undefined
     let data = undefined 
 
-    const repo_res = await authRepo.getUserByUsername(input.username, ["passwordHash"])
+    const repo_res = await authRepo.getUserByUsername(input.username, ["passwordHash", "id"])
     if(!repo_res.success){
         if(repo_res.code == "USER_NOT_FOUND")
             code = "USERNAME_NOT_EXISTS"
@@ -57,7 +57,7 @@ export async function login(input: LoginInput) {
             if(valid){
                 success = true
                 data = {
-                    token: sign({...input})
+                    token: sign({username: input.username, id: repo_res.data?.id})
                 }
             } else {
                 code = "INVALID_PASSWORD"

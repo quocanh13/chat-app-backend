@@ -49,7 +49,8 @@ export async function login(req: Request, res: Response) {
     if(!dto.success){
         err_response = {
             error : "INVALID_DATA",
-            detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors}
+            detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors},
+            message : "Invalid data"
         }
         return res.status(400).json(err_response)
     }
@@ -61,7 +62,8 @@ export async function login(req: Request, res: Response) {
                 error: "USERNAME_NOT_EXISTS",
                 detail: {
                     username: ["Username not exists"]
-                }
+                },
+                message : "Username does not exist"
             }
             return res.status(404).json(err_response)
         }
@@ -70,7 +72,8 @@ export async function login(req: Request, res: Response) {
                 error: "INVALID_PASSWORD",
                 detail: {
                     password: ["Invalid password"]
-                }
+                },
+                message : "Invalid password"
             }
             return res.status(401).json(err_response)
         } else {
@@ -78,7 +81,8 @@ export async function login(req: Request, res: Response) {
                 error: "INTERNAL_ERROR",
                 detail: {
                     server: ["Server error"]
-                }
+                },
+                message : "Server error"
             }
             return res.status(500).json(err_response)
         }

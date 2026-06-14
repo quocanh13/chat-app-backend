@@ -2,7 +2,6 @@ import {NextFunction, Request, Response} from "express"
 import { GetUserByIdSchema, PatchUserSchema, PutUserSchema } from "./user.dto.js"
 import { ErrorResponse } from "../../shared/types.js"
 import * as UserService from "./user.service.js"
-import { updateUser } from "./user.repository.js"
 
 export async function getUserById(req: Request, res: Response) {
     const dto = GetUserByIdSchema.safeParse(req.params)
@@ -124,7 +123,7 @@ export async function patchUser(req: Request, res: Response) {
         return res.status(400).json(errorResponse)
     }
 
-    const serviceResult = await updateUser(dto.data)
+    const serviceResult = await UserService.updateUser(dto.data)
     if(serviceResult.success) {
         return res.sendStatus(204)
     }
@@ -142,6 +141,6 @@ export async function patchUser(req: Request, res: Response) {
             detail : {server : ["Server error"]},
             message : `Server error`
         }
-        return res.status(404).json(errorResponse)
+        return res.status(500).json(errorResponse)
     }
 }

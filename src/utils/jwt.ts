@@ -11,7 +11,7 @@ export function sign<T extends object>(payload: T){
     if (!secret) {
         throw new Error("JWT_ACCESS_SECRET is not defined");
     }
-    return jwt.sign(payload, process.env.JWT_ACCESS_SECRET as string, {expiresIn: "30m"})
+    return jwt.sign(payload, process.env.JWT_ACCESS_SECRET as string, {expiresIn: "1y"})
 }
 
 export function verify(token: string) : "INVALID_TOKEN" | "TOKEN_EXPIRED" | {id: number, username: string}{

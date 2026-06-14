@@ -11,8 +11,14 @@ export const GetGroupSchema = z.object({
     includeMember : z.boolean()
 })
 
-export const AddUserToGroupSchema = z.object({
+export const AddMemberSchema = z.object({
     groupId : z.int().positive(),
     userId : z.int().positive(),
+    hostId : z.int().positive()
+})
+
+export const DeleteMemberSchema = z.object({
+    groupId : z.int().positive(),
+    memberId : z.int().positive(),
     hostId : z.int().positive()
 })

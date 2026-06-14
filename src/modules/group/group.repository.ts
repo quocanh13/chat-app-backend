@@ -7,21 +7,21 @@ import { number, success } from "zod";
 
 type CreateGroupCode = "GROUP_NAME_TOO_LONG" | "INVALID_GROUP_TYPE" | "INTERNAL_ERROR" 
 type CreateUserInGroupCode =  "INVALID_ROLE" | "USER_ALREADY_IN_GROUP" | "USER_OR_GROUP_NOT_EXIST" | "INTERNAL_ERROR"
-type GetMembersCode = "GROUP_NOT_EXIST" | "INTERNAL_ERROR"
+type GetUserInGroupByGroupIdCode = "GROUP_NOT_EXIST" | "INTERNAL_ERROR"
 type GetGroupByIdCode =  "GROUP_NOT_EXIST" | "INVALID_FIELD" | "INTERNAL_ERROR"
 type GetUserInGroupCode = "USER_NOT_IN_GROUP" | "INVALID_FIELD" | "INTERNAL_ERROR"
+type DeleteUserInGroupCode = "INTERNAL_ERROR"
 
 
 interface CreateGroupInput {
     name: string,
-    type: "direct" | "group"
 }
 interface CreateUserInGroupInput {
     userId : number,
     groupId : number,
     role : "member" | "host"
 }
-interface GetMembersInput{
+interface GetUserInGroupByGroupIdInput{
     groupId : number
 }
 interface GetGroupByIdInput<F extends GroupFields[]> {
@@ -33,7 +33,10 @@ interface GetUserInGroupInput<F extends UserInGroupFields[]> {
     groupId: number,
     field?: F
 }
-
+interface DeleteUserInGroupInput{
+    memberId : number,
+    groupId : number
+}
 
 interface MemberData{
     userId : number,
@@ -114,9 +117,9 @@ export async function createUserInGroup(
     return {code, success, data}
 }
 
-export async function getMembers(
-    input: GetMembersInput
-) : Promise<RepoResult<GetMembersCode, MemberData[]>> {
+export async function getUserInGroupByGroupId(
+    input: GetUserInGroupByGroupIdInput
+) : Promise<RepoResult<GetUserInGroupByGroupIdCode, MemberData[]>> {
     const sql = `SELECT user_id as userId, role FROM user_in_group WHERE group_id = ?;`
     try {
         const [rows, packet] = await pool.query<RowDataPacket[]>(sql, [input.groupId])
@@ -126,7 +129,7 @@ export async function getMembers(
         const data = rows as MemberData[]
         return {success: true, data}
     } catch (err){
-        let code: GetMembersCode
+        let code: GetUserInGroupByGroupIdCode
         code = "INTERNAL_ERROR"
         const e = err as any
         return {success : false, code}
@@ -141,7 +144,7 @@ export async function getGroupById<F extends GroupFields[]>(
     let data : GetGroupData<F> | undefined = undefined
     let fields : string
     if(input.field == undefined)
-        fields = "id, name, type, last_message_id as lastMessageId, created_at as createdAt"
+        fields = "id, name, last_message_id as lastMessageId, created_at as createdAt"
     else
         fields = getGetField(input.field)
     
@@ -196,3 +199,16 @@ export async function getUserInGroupByKey<F extends UserInGroupFields[]>(
     return {success, code, data}
 }
 
+export async function deleteUserInGroupByKey(
+    input : DeleteUserInGroupInput
+) : Promise<RepoResult<DeleteUserInGroupCode>> {
+    const sql = `DELETE FROM user_in_group WHERE user_id = ? AND group_id = ?`
+    try{
+        await pool.query<ResultSetHeader>(sql, [input.memberId, input.groupId])
+        return {success : true}
+    } catch(err) {
+        const e = err as any
+        console.log(e)
+        return {success : false, code : "INTERNAL_ERROR"}
+    }
+}

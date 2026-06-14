@@ -21,9 +21,14 @@ interface IsMemberInput {
     userId: number,
     groupId : number
 }
-interface AddUserToGroupInput {
+interface AddMemeberToGroupInput {
     groupId : number,
     userId : number,
+    hostId : number
+}
+interface DeleteMemberInput {
+    groupId : number,
+    memberId : number,
     hostId : number
 }
 
@@ -48,13 +53,14 @@ type GetGroupByIdCode = "GROUP_NOT_EXISTS" | "ONLY_MEMBER_CAN_ACCESS" | "INTERNA
 type IsHostCode = "INTERNAL_ERROR"
 type IsMemberCode = "INTERNAL_ERROR"
 type AddUserToGroupCode = "ONLY_HOST_CAN_ADD_MEMBER" | "USER_OR_GROUP_NOT_EXIST" | "USER_ALREADY_IN_GROUP"  | "INTERNAL_ERROR"
+type DeleteMemberCode = "ONLY_HOST_CAN_DELETE_MEMBER" | "HOST_CANNOT_DELETE_HOST" | "INTERNAL_ERROR"
 
 
 export async function createGroup(input: CreateGroupInput) : Promise<ServiceResult<CreateGroupCode, CreateGroupData>>{
     const {name, hostId} = input
 
     const transactionResult = await queryTransaction(async (connection)=>{
-        const createGroupResult = await GroupRepo.createGroup({name, type : "group"}, connection)
+        const createGroupResult = await GroupRepo.createGroup({name}, connection)
         if(createGroupResult.success){
             const groupId = createGroupResult.data?.id!
             const createUserInGroupResult = await GroupRepo.createUserInGroup({groupId, userId : hostId, role : "host"})    
@@ -117,7 +123,7 @@ export async function getGroup(input: GetGroupByIdInput) : Promise<ServiceResult
         return {code : "ONLY_MEMBER_CAN_ACCESS" , success}
     
         
-    const getGroupByIdResult = await GroupRepo.getGroupById({id : input.groupId, field : ["id", "name", "type", "lastMessageId"]})
+    const getGroupByIdResult = await GroupRepo.getGroupById({id : input.groupId, field : ["id", "name", "lastMessageId"]})
     if(!getGroupByIdResult.success){
         if(getGroupByIdResult.code == "GROUP_NOT_EXIST")
             code = "GROUP_NOT_EXISTS"
@@ -130,7 +136,7 @@ export async function getGroup(input: GetGroupByIdInput) : Promise<ServiceResult
     if(!input.includeMember)
         return {success : true, data}
 
-    const getMemberResult = await GroupRepo.getMembers(input)
+    const getMemberResult = await GroupRepo.getUserInGroupByGroupId(input)
     if(getMemberResult.success){
         data.members = getMemberResult.data
         return {success : true, data}
@@ -139,7 +145,7 @@ export async function getGroup(input: GetGroupByIdInput) : Promise<ServiceResult
     return {code : "INTERNAL_ERROR", success}
 }
 
-export async function addUserToGroup(input : AddUserToGroupInput) : Promise<ServiceResult<AddUserToGroupCode>> {
+export async function addUserToGroup(input : AddMemeberToGroupInput) : Promise<ServiceResult<AddUserToGroupCode>> {
     let success = false
     let code : AddUserToGroupCode | undefined = undefined
     const isHostResult = await isHost({groupId: input.groupId, userId : input.hostId})
@@ -164,4 +170,27 @@ export async function addUserToGroup(input : AddUserToGroupInput) : Promise<Serv
     else
         code = "INTERNAL_ERROR"
     return {success, code}
+}
+
+export async function deleteMember(
+    input : DeleteMemberInput
+) : Promise<ServiceResult<DeleteMemberCode>> {
+    let success = false
+    let code : AddUserToGroupCode | undefined = undefined
+    const isHostResult = await isHost({groupId: input.groupId, userId : input.hostId})
+    if(!isHostResult.success){
+        return {success, code : "INTERNAL_ERROR"}
+    }
+    if(!isHostResult.data?.isHost)
+        return {success, code : "ONLY_HOST_CAN_DELETE_MEMBER"}
+    
+    if(input.hostId == input.memberId){
+        return {success : false, code : "HOST_CANNOT_DELETE_HOST"}
+    }
+
+    const repoResult = await GroupRepo.deleteUserInGroupByKey(input)
+    if(repoResult.success){
+        return {success : true}
+    }
+    return {success, code : "INTERNAL_ERROR"}  
 }

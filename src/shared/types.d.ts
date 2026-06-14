@@ -1,6 +1,6 @@
 export type UserFields = "id" | "username" | "passwordHash" | "name" | "email" | "avatarFileId" | "createdAt"
 export type FileFields = "id" | "name" | "mimeType" | "type" | "size" | "userId" | "uploadedAt"
-export type GroupFields = "id" | "name" | "type" | "lastMessageId" | "createdAt"
+export type GroupFields = "id" | "name" | "lastMessageId" | "createdAt"
 export type UserInGroupFields = "userId" | "groupId" | "role" | "joinedAt"
 
 export type User = {

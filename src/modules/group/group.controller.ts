@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import * as GroupService from "./group.service.js"
 import { ErrorResponse } from "../../shared/types.js"
-import { AddUserToGroupSchema, CreateGroupSchema, GetGroupSchema } from "./group.dto.js"
+import { AddMemberSchema, CreateGroupSchema, DeleteMemberSchema, GetGroupSchema } from "./group.dto.js"
 
 export async function postGroup(req: Request, res: Response) {
     const body = {...req.body, hostId : req.user?.id}
@@ -87,7 +87,7 @@ export async function getGroup(req: Request, res: Response) {
 export async function postMember(req: Request, res: Response) {
     const input = {userId : req.body.userId, hostId : req.user!.id, groupId : Number(req.params.groupId)}
     let errorResponse: ErrorResponse
-    const dto = AddUserToGroupSchema.safeParse(input)
+    const dto = AddMemberSchema.safeParse(input)
 
     if(!dto.success) {
         errorResponse = {
@@ -130,6 +130,47 @@ export async function postMember(req: Request, res: Response) {
         return res.status(404).json(errorResponse)
     } 
     console.log(serviceResult)
+    errorResponse = {
+        error : "SERVER_ERROR",
+        message : "Server error",
+        detail : {server : ["Server error"]}
+    }
+    return res.status(500).json(errorResponse)
+}
+export async function deleteMember(req: Request, res: Response) {
+    const input = {memberId : Number(req.params.memberId), hostId : req.user!.id, groupId : Number(req.params.groupId)}
+    let errorResponse: ErrorResponse
+    const dto = DeleteMemberSchema.safeParse(input)
+
+    if(!dto.success) {
+        errorResponse = {
+            error : "INVALID_DATA",
+            message : "Invalid data",
+            detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors}
+        }
+        return res.status(400).json(errorResponse)
+    }
+
+    const serviceResult = await GroupService.deleteMember(dto.data)
+    if(serviceResult.success) {
+        return res.sendStatus(204)
+    }
+    if(serviceResult.code == "ONLY_HOST_CAN_DELETE_MEMBER"){
+        errorResponse = {
+            error : "ONLY_HOST_CAN_DELETE_MEMBER",
+            message : "Only host can delete member",
+            detail : {permission : ["Only host can delete member"]}
+        }
+        return res.status(403).json(errorResponse)
+    }
+    if(serviceResult.code == "HOST_CANNOT_DELETE_HOST"){
+        errorResponse = {
+            error : "HOST_CANNOT_DELETE_HOST",
+            message : "Host cannot delete host",
+            detail : {permission : ["Host cannot delete host"]}
+        }
+        return res.status(403).json(errorResponse)
+    }
     errorResponse = {
         error : "SERVER_ERROR",
         message : "Server error",

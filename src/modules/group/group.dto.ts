@@ -11,6 +11,20 @@ export const GetGroupSchema = z.object({
     includeMember : z.boolean()
 })
 
+export const PutGroupSchema = z.object({
+    groupId : z.int().positive(),
+    userId : z.int().positive(),
+    name : z.string().min(1).max(50),
+    avatarFileId : z.int().positive().nullable()
+})
+
+export const PatchGroupSchema = z.object({
+    groupId : z.int().positive(),
+    userId : z.int().positive(),
+    name : z.string().min(1).max(50).optional(),
+    avatarFileId : z.int().positive().nullable().optional()
+})
+
 export const AddMemberSchema = z.object({
     groupId : z.int().positive(),
     userId : z.int().positive(),

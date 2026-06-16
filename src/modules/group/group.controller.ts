@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import * as GroupService from "./group.service.js"
 import { ErrorResponse } from "../../shared/types.js"
-import { AddMemberSchema, CreateGroupSchema, DeleteMemberSchema, GetGroupSchema } from "./group.dto.js"
+import { AddMemberSchema, CreateGroupSchema, DeleteMemberSchema, GetGroupSchema, PatchGroupSchema, PutGroupSchema } from "./group.dto.js"
 
 export async function postGroup(req: Request, res: Response) {
     const body = {...req.body, hostId : req.user?.id}
@@ -69,11 +69,11 @@ export async function getGroup(req: Request, res: Response) {
         }
         return res.status(400).json(errorResponse)
     } 
-    if(serviceResult.code == "GROUP_NOT_EXISTS"){
+    if(serviceResult.code == "GROUP_NOT_FOUND"){
         errorResponse = {
-            error : "GROUP_NOT_EXISTS",
-            message : "Group does not exist",
-            detail : {groupId : [`Group with id = ${dto.data.groupId} does not exist`]}
+            error : "GROUP_NOT_FOUND",
+            message : "Group not found",
+            detail : {groupId : [`Group with id = ${dto.data.groupId} does not found`]}
         }
         return res.status(400).json(errorResponse)
     } 
@@ -81,6 +81,122 @@ export async function getGroup(req: Request, res: Response) {
         error : "SERVER_ERROR",
         message : "Server error",
         detail : {server : ["Server error"]}
+    }
+    return res.status(500).json(errorResponse)
+}
+export async function putGroup(req: Request, res: Response) {
+    let errorResponse : ErrorResponse
+    const input = {
+        groupId : Number(req.params.groupId),
+        userId : req.user?.id,
+        name : req.body.name,
+        avatarFileId : req.body.avatarFileId
+    }
+
+    const dto = PutGroupSchema.safeParse(input)
+    if(!dto.success) {
+        errorResponse = {
+            error : "INVALID_DATA",
+            message : "Invalid data",
+            detail : {...dto.error.flatten().fieldErrors}
+        }
+        return res.status(400).json(errorResponse)
+    }
+
+    const serviceResult = await GroupService.updateGroup(dto.data)
+    if(serviceResult.success)
+        return res.sendStatus(204)
+
+    if(serviceResult.code == "ONLY_HOST_CAN_UPDATE"){
+        errorResponse = {
+            error : "ONLY_HOST_CAN_UPDATE",
+            message : "Only host can update"
+        }
+        return res.status(403).json(errorResponse)
+    }
+
+    if(serviceResult.code == "EMPTY_FIELD"){
+        errorResponse = {
+            error : "EMPTY_BODY",
+            message : "Body is empty"
+        }
+        return res.status(400).json(errorResponse)
+    }
+    if(serviceResult.code == "GROUP_NOT_FOUND"){
+        errorResponse = {
+            error : "GROUP_NOT_FOUND",
+            message : `Group with id = ${dto.data.groupId} not found`
+        }
+        return res.status(400).json(errorResponse)
+    }
+    errorResponse = {
+        error : "SERVER_ERROR",
+        message : "Server error"
+    }
+    return res.status(500).json(errorResponse)
+}
+export async function patchGroup(req: Request, res: Response) {
+    let errorResponse : ErrorResponse
+    const input = {
+        groupId : Number(req.params.groupId),
+        userId : req.user?.id,
+        name : req.body.name,
+        avatarFileId : req.body.avatarFileId
+    }
+
+    const dto = PatchGroupSchema.safeParse(input)
+    if(!dto.success) {
+        errorResponse = {
+            error : "INVALID_DATA",
+            message : "Invalid data",
+            detail : {...dto.error.flatten().fieldErrors}
+        }
+        return res.status(400).json(errorResponse)
+    }
+
+    const serviceResult = await GroupService.updateGroup(dto.data)
+    if(serviceResult.success)
+        return res.sendStatus(204)
+
+    if(serviceResult.code == "ONLY_HOST_CAN_UPDATE"){
+        errorResponse = {
+            error : "ONLY_HOST_CAN_UPDATE",
+            message : "Only host can update"
+        }
+        return res.status(403).json(errorResponse)
+    }
+
+    if(serviceResult.code == "EMPTY_FIELD"){
+        errorResponse = {
+            error : "EMPTY_BODY",
+            message : "Body is empty"
+        }
+        return res.status(400).json(errorResponse)
+    }
+    if(serviceResult.code == "GROUP_NOT_FOUND"){
+        errorResponse = {
+            error : "GROUP_NOT_FOUND",
+            message : `Group with id = ${dto.data.groupId} not found`
+        }
+        return res.status(400).json(errorResponse)
+    }
+    if(serviceResult.code == "AVATAR_NOT_FOUND"){
+        errorResponse = {
+            error : "AVATAR_NOT_FOUND",
+            message : `Avatar with file id = ${dto.data.avatarFileId} not found`
+        }
+        return res.status(404).json(errorResponse)
+    }
+    if(serviceResult.code == "AVATAR_ACCESS_DENIED"){
+        errorResponse = {
+            error : "AVATAR_ACCESS_DENIED",
+            message : `You do not have the permisson to access avatar with file id = ${dto.data.avatarFileId}`
+        }
+        return res.status(404).json(errorResponse)
+    }
+    errorResponse = {
+        error : "SERVER_ERROR",
+        message : "Server error"
     }
     return res.status(500).json(errorResponse)
 }
@@ -105,27 +221,21 @@ export async function postMember(req: Request, res: Response) {
     if(serviceResult.code == "ONLY_HOST_CAN_ADD_MEMBER"){
         errorResponse = {
             error : "ONLY_HOST_CAN_ADD_MEMBER",
-            message : "Only host can add member",
-            detail : {permission : ["Only host can add member"]}
+            message : `Only host can add member, your id = ${dto.data.hostId} is not the host`,
         }
         return res.status(403).json(errorResponse)
     }
     if(serviceResult.code == "USER_ALREADY_IN_GROUP"){
         errorResponse = {
             error : "USER_ALREADY_IN_GROUP",
-            message : "User is already in group",
-            detail : {userId : ["User is already in group"]}
+            message : `User with id = ${dto.data.userId} is already in group`
         }
         return res.status(409).json(errorResponse)
     } 
-    if(serviceResult.code == "USER_OR_GROUP_NOT_EXIST"){
+    if(serviceResult.code == "USER_OR_GROUP_NOT_FOUND"){
         errorResponse = {
-            error : "USER_OR_GROUP_NOT_EXIST",
-            message : "User or group does not exist",
-            detail : {
-                userId : ["User might not exist"], 
-                groupId : ["Group might not exist"]
-            }
+            error : "USER_OR_GROUP_NOT_FOUND",
+            message : `User with id = ${dto.data.userId} or group with id = ${dto.data.groupId} not found`,
         }
         return res.status(404).json(errorResponse)
     } 

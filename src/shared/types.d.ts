@@ -1,6 +1,6 @@
 export type UserFields = "id" | "username" | "passwordHash" | "name" | "email" | "avatarFileId" | "createdAt"
 export type FileFields = "id" | "name" | "mimeType" | "type" | "size" | "userId" | "uploadedAt"
-export type GroupFields = "id" | "name" | "lastMessageId" | "createdAt"
+export type GroupFields = "id" | "name" | "avatarFileId" | "lastMessageId" | "createdAt"
 export type UserInGroupFields = "userId" | "groupId" | "role" | "joinedAt"
 
 export type User = {
@@ -15,7 +15,8 @@ export type User = {
 export type FilePermission = {
     read: boolean,
     update: boolean,
-    delete: boolean
+    delete: boolean,
+    owner: boolean
 }
 export type File = {
     id: number,
@@ -29,7 +30,7 @@ export type File = {
 export type Group = {
     id: number
     name: string,
-    type : "direct" | "group",
+    avatarFileId : number | null,
     lastMessageId : number,
     createdAt: Date
 }

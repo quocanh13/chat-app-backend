@@ -55,7 +55,7 @@ export async function getUserById <F extends UserFields[] >(
     return {success, code, data} 
 }
 
-export async function updateUser(
+export async function updateUserById(
     user: UpdateUserInput, 
     fields: UserFields[] | undefined = undefined
 ) : Promise<RepoResult<UpdateUserCode>> {

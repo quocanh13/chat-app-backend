@@ -1,6 +1,7 @@
 import { PoolConnection } from "mysql2/promise"
 import { queryTransaction } from "../../configs/transaction.js"
 import { RepoResult, ServiceResult } from "../../shared/types.js"
+import { getFilePermission } from "file"
 import * as GroupRepo from "./group.repository.js"
 
 
@@ -8,10 +9,16 @@ interface CreateGroupInput {
     name: string,
     hostId : number,
 }
-interface GetGroupByIdInput {
+interface GetGroupInput {
     groupId : number,
     userId : number,
     includeMember: boolean
+}
+interface UpdateGroupInput{
+    groupId : number,
+    name? : string,
+    userId : number,
+    avatarFileId? : number | null
 }
 interface IsHostInput {
     userId: number,
@@ -48,15 +55,20 @@ interface GetGroupByIdData {
 
 type CreateGroupCode =  
     "GROUP_NAME_TOO_LONG" | "USER_ALREADY_IN_GROUP" | "INVALID_ROLE" |
-    "INVALID_GROUP_TYPE" | "USER_OR_GROUP_NOT_EXIST" | "INTERNAL_ERROR"
-type GetGroupByIdCode = "GROUP_NOT_EXISTS" | "ONLY_MEMBER_CAN_ACCESS" | "INTERNAL_ERROR"
+    "INVALID_GROUP_TYPE" | "USER_OR_GROUP_NOT_FOUND" | "INTERNAL_ERROR"
+type GetGroupByIdCode = "GROUP_NOT_FOUND" | "ONLY_MEMBER_CAN_ACCESS" | "INTERNAL_ERROR"
+type UpdateGroupCode = 
+    "GROUP_NOT_FOUND" | "ONLY_HOST_CAN_UPDATE" | "AVATAR_ACCESS_DENIED" | "AVATAR_NOT_FOUND" | 
+    "EMPTY_FIELD" | "INTERNAL_ERROR"
 type IsHostCode = "INTERNAL_ERROR"
 type IsMemberCode = "INTERNAL_ERROR"
-type AddUserToGroupCode = "ONLY_HOST_CAN_ADD_MEMBER" | "USER_OR_GROUP_NOT_EXIST" | "USER_ALREADY_IN_GROUP"  | "INTERNAL_ERROR"
+type AddUserToGroupCode = "ONLY_HOST_CAN_ADD_MEMBER" | "USER_OR_GROUP_NOT_FOUND" | "USER_ALREADY_IN_GROUP"  | "INTERNAL_ERROR"
 type DeleteMemberCode = "ONLY_HOST_CAN_DELETE_MEMBER" | "HOST_CANNOT_DELETE_HOST" | "INTERNAL_ERROR"
 
 
-export async function createGroup(input: CreateGroupInput) : Promise<ServiceResult<CreateGroupCode, CreateGroupData>>{
+export async function createGroup(
+    input: CreateGroupInput
+) : Promise<ServiceResult<CreateGroupCode, CreateGroupData>>{
     const {name, hostId} = input
 
     const transactionResult = await queryTransaction(async (connection)=>{
@@ -74,45 +86,9 @@ export async function createGroup(input: CreateGroupInput) : Promise<ServiceResu
     return transactionResult
 }
 
-async function isMember(input : IsMemberInput) : Promise<ServiceResult<IsMemberCode, {isMember : boolean}>> {
-    let success = false
-    let code : IsHostCode | undefined = undefined
-    let data = {isMember : false}
-    const repoResult = await GroupRepo.getUserInGroupByKey({groupId : input.groupId, userId : input.userId, field: ["role"]})
-    if(repoResult.success){
-        success = true
-        data.isMember = true
-    } else {
-        if(repoResult.code == "USER_NOT_IN_GROUP"){
-            success = true
-        } else {
-            success = false
-            code = "INTERNAL_ERROR"
-        }
-    }
-    return {success, code, data}
-}
-
-async function isHost(input : IsHostInput) : Promise<ServiceResult<IsHostCode, {isHost : boolean}>> {
-    let success = false
-    let code : IsHostCode | undefined = undefined
-    let data = {isHost : false}
-    const repoResult = await GroupRepo.getUserInGroupByKey({groupId : input.groupId, userId : input.userId, field: ["role"]})
-    if(repoResult.success && repoResult.data?.role == "host"){
-        success = true
-        data.isHost = true
-    } else {
-        if(repoResult.code == "USER_NOT_IN_GROUP"){
-            success = true
-        } else {
-            success = false
-            code = "INTERNAL_ERROR"
-        }
-    }
-    return {success, code, data}
-}
-
-export async function getGroup(input: GetGroupByIdInput) : Promise<ServiceResult<GetGroupByIdCode, GetGroupByIdData>> {
+export async function getGroup(
+    input: GetGroupInput
+) : Promise<ServiceResult<GetGroupByIdCode, GetGroupByIdData>> {
     let success = false
     let code : GetGroupByIdCode | undefined = undefined
     let data : GetGroupByIdData | undefined = undefined
@@ -125,8 +101,8 @@ export async function getGroup(input: GetGroupByIdInput) : Promise<ServiceResult
         
     const getGroupByIdResult = await GroupRepo.getGroupById({id : input.groupId, field : ["id", "name", "lastMessageId"]})
     if(!getGroupByIdResult.success){
-        if(getGroupByIdResult.code == "GROUP_NOT_EXIST")
-            code = "GROUP_NOT_EXISTS"
+        if(getGroupByIdResult.code == "GROUP_NOT_FOUND")
+            code = "GROUP_NOT_FOUND"
         else
             code = "INTERNAL_ERROR"
         return {code, success}
@@ -145,7 +121,87 @@ export async function getGroup(input: GetGroupByIdInput) : Promise<ServiceResult
     return {code : "INTERNAL_ERROR", success}
 }
 
-export async function addUserToGroup(input : AddMemeberToGroupInput) : Promise<ServiceResult<AddUserToGroupCode>> {
+async function isMember(
+    input : IsMemberInput
+) : Promise<ServiceResult<IsMemberCode, {isMember : boolean}>> {
+    let success = false
+    let code : IsHostCode | undefined = undefined
+    let data = {isMember : false}
+    const repoResult = await GroupRepo.getUserInGroupByKey({groupId : input.groupId, userId : input.userId, field: ["role"]})
+    if(repoResult.success){
+        success = true
+        data.isMember = true
+    } else {
+        if(repoResult.code == "USER_NOT_IN_GROUP"){
+            success = true
+        } else {
+            success = false
+            code = "INTERNAL_ERROR"
+        }
+    }
+    return {success, code, data}
+}
+
+async function isHost(
+    input : IsHostInput
+) : Promise<ServiceResult<IsHostCode, {isHost : boolean}>> {
+    let success = false
+    let code : IsHostCode | undefined = undefined
+    let data = {isHost : false}
+    const repoResult = await GroupRepo.getUserInGroupByKey({groupId : input.groupId, userId : input.userId, field: ["role"]})
+    if(repoResult.success && repoResult.data?.role == "host"){
+        success = true
+        data.isHost = true
+    } else {
+        if(repoResult.code == "USER_NOT_IN_GROUP"){
+            success = true
+        } else {
+            success = false
+            code = "INTERNAL_ERROR"
+        }
+    }
+    return {success, code, data}
+}
+
+export async function updateGroup(
+    input: UpdateGroupInput
+) : Promise<ServiceResult<UpdateGroupCode>> {
+    let success = false
+    let code : UpdateGroupCode | undefined = undefined
+
+    if(input.avatarFileId){
+        const getFilePermissionResult = await getFilePermission({fileId : input.avatarFileId, userId : input.userId})
+        if(getFilePermissionResult.success && !getFilePermissionResult.data?.permission.owner)
+            return {success, code : "AVATAR_ACCESS_DENIED"}
+        if(getFilePermissionResult.code == "FILE_NOT_FOUND")
+            return {success, code : "AVATAR_NOT_FOUND"}
+    }
+
+    const isHostResult = await isHost({groupId: input.groupId, userId : input.userId})
+    console.log(isHostResult)
+    if(!isHostResult.success){
+        return {success, code : "INTERNAL_ERROR"}
+    }
+    if(!isHostResult.data?.isHost)
+        return {success, code : "ONLY_HOST_CAN_UPDATE"}
+
+    const updateGroupResult = await GroupRepo.updateGroupById({id : input.groupId, name : input.name}, ["name"])
+    if(updateGroupResult.success){
+        return {success : true}
+    }
+    
+    if(updateGroupResult.code == "GROUP_NOT_FOUND")
+        code = "GROUP_NOT_FOUND"
+    else if(updateGroupResult.code == "EMPTY_FIELD")
+        code = "EMPTY_FIELD"
+    else 
+        code = "INTERNAL_ERROR"
+    return {success, code}
+}
+
+export async function addUserToGroup(
+    input : AddMemeberToGroupInput
+) : Promise<ServiceResult<AddUserToGroupCode>> {
     let success = false
     let code : AddUserToGroupCode | undefined = undefined
     const isHostResult = await isHost({groupId: input.groupId, userId : input.hostId})
@@ -165,8 +221,8 @@ export async function addUserToGroup(input : AddMemeberToGroupInput) : Promise<S
     }
     if(repoResult.code == "USER_ALREADY_IN_GROUP")
         code = "USER_ALREADY_IN_GROUP"
-    else if(repoResult.code == "USER_OR_GROUP_NOT_EXIST")
-        code = "USER_OR_GROUP_NOT_EXIST"
+    else if(repoResult.code == "USER_OR_GROUP_NOT_FOUND")
+        code = "USER_OR_GROUP_NOT_FOUND"
     else
         code = "INTERNAL_ERROR"
     return {success, code}

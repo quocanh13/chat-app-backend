@@ -1,15 +1,15 @@
 import { ResultSetHeader } from "mysql2";
 import pool from "../../configs/database.js";
-import { getGetField, getInsertField } from "../../utils/sql.js";
+import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
 import { GroupFields, RepoResult, Group, UserInGroupFields, UserInGroup } from "../../shared/types.js";
 import { FieldPacket, PoolConnection, QueryResult, RowDataPacket } from "mysql2/promise";
-import { number, success } from "zod";
 
 type CreateGroupCode = "GROUP_NAME_TOO_LONG" | "INVALID_GROUP_TYPE" | "INTERNAL_ERROR" 
-type CreateUserInGroupCode =  "INVALID_ROLE" | "USER_ALREADY_IN_GROUP" | "USER_OR_GROUP_NOT_EXIST" | "INTERNAL_ERROR"
-type GetUserInGroupByGroupIdCode = "GROUP_NOT_EXIST" | "INTERNAL_ERROR"
-type GetGroupByIdCode =  "GROUP_NOT_EXIST" | "INVALID_FIELD" | "INTERNAL_ERROR"
-type GetUserInGroupCode = "USER_NOT_IN_GROUP" | "INVALID_FIELD" | "INTERNAL_ERROR"
+type GetGroupByIdCode =  "GROUP_NOT_FOUND" | "INVALID_FIELD" | "INTERNAL_ERROR"
+type UpdateGroupByIdCode = "GROUP_NOT_FOUND" | "SYNTAX_ERROR" |"INVALID_FIELD" | "REFERENCE_ERROR" | "EMPTY_FIELD" | "INTERNAL_ERROR"
+type CreateUserInGroupCode =  "INVALID_ROLE" | "USER_ALREADY_IN_GROUP" | "USER_OR_GROUP_NOT_FOUND" | "INTERNAL_ERROR"
+type GetUserInGroupByGroupIdCode = "GROUP_NOT_FOUND" | "INTERNAL_ERROR"
+type GetUserInGroupByKeyCode = "USER_NOT_IN_GROUP" | "INVALID_FIELD" | "INTERNAL_ERROR"
 type DeleteUserInGroupCode = "INTERNAL_ERROR"
 
 
@@ -21,14 +21,21 @@ interface CreateUserInGroupInput {
     groupId : number,
     role : "member" | "host"
 }
-interface GetUserInGroupByGroupIdInput{
-    groupId : number
-}
 interface GetGroupByIdInput<F extends GroupFields[]> {
     id : number,
     field?: F
 }
-interface GetUserInGroupInput<F extends UserInGroupFields[]> {
+interface UpdateGroupByIdInput{
+    id : number,
+    name? : string,
+    lastMessageId? : number,
+    avatarFileId? : number | null
+    createdAt? : Date
+}
+interface GetUserInGroupByGroupIdInput{
+    groupId : number
+}
+interface GetUserInGroupByKeyInput<F extends UserInGroupFields[]> {
     userId: number,
     groupId: number,
     field?: F
@@ -83,7 +90,70 @@ export async function createGroup(
     connection.release()
     return {code, success, data}
 }
+export async function getGroupById<F extends GroupFields[]>(
+    input : GetGroupByIdInput<F>
+) : Promise<RepoResult<GetGroupByIdCode, GetGroupData<F>>> {
+    let success = false
+    let code : GetGroupByIdCode | undefined = undefined
+    let data : GetGroupData<F> | undefined = undefined
+    let fields : string
+    if(input.field == undefined)
+        fields = "id, name, last_message_id as lastMessageId, created_at as createdAt"
+    else
+        fields = getGetField(input.field)
+    
+    const sql = `SELECT ${fields} FROM chat_group WHERE id = ?;`
+    try {
+        const [rows, packet] = await pool.query<RowDataPacket[]>(sql, input.id)
+        success = true
+        if(rows.length <= 0) {
+            code = "GROUP_NOT_FOUND"
+        } else data = rows[0] as GetGroupData<F>
+    } catch (err){
+        const e = err as any
+        if(e.code == 'ER_BAD_FIELD_ERROR')
+            code = "INVALID_FIELD"
+        else{
+            code = "INTERNAL_ERROR"
+            console.log(err)
+        }
+    }
+    return {success, code, data}
+}
+export async function updateGroupById(
+    group: UpdateGroupByIdInput, 
+    fields: GroupFields[] | undefined = undefined
+) : Promise<RepoResult<UpdateGroupByIdCode>> {
+    let code : UpdateGroupByIdCode
+    let data: undefined = undefined
+    const {field, values} = getUpdateField(group, fields)
+    if(values.length == 0){
+        return {code : "EMPTY_FIELD", success : false, data}
+    }
 
+    const sql = `UPDATE chat_group SET ${field} WHERE id = ?`
+    
+    try{
+        const [result] = await pool.query<ResultSetHeader>(sql, [...values, group.id])
+        if(result.affectedRows == 0){
+            return {success : true, code : "GROUP_NOT_FOUND"}
+        } 
+        return {success : true}
+
+    } catch(err){
+        const e = err as any
+        if(e?.code == "ER_PARSE_ERROR")
+            code = "SYNTAX_ERROR"
+        else if(e?.code == "ER_BAD_FIELD_ERROR")
+            code = "INVALID_FIELD"
+        else if(e?.code == "ER_NO_REFERENCED_ROW_2")
+            code = "REFERENCE_ERROR"
+        else 
+            console.error(err)
+            code = "INTERNAL_ERROR"
+        return {success : false, code}
+    }
+}
 export async function createUserInGroup(
     input: CreateUserInGroupInput, 
     connection : PoolConnection | undefined = undefined
@@ -107,7 +177,7 @@ export async function createUserInGroup(
         } else if(e.code == "ER_DUP_ENTRY") {
             code = "USER_ALREADY_IN_GROUP"
         } else if(e.code == "ER_NO_REFERENCED_ROW_2"){
-            code = "USER_OR_GROUP_NOT_EXIST"
+            code = "USER_OR_GROUP_NOT_FOUND"
         } else {
             code = "INTERNAL_ERROR"
             console.log(err)
@@ -116,7 +186,6 @@ export async function createUserInGroup(
     connection.release()
     return {code, success, data}
 }
-
 export async function getUserInGroupByGroupId(
     input: GetUserInGroupByGroupIdInput
 ) : Promise<RepoResult<GetUserInGroupByGroupIdCode, MemberData[]>> {
@@ -124,7 +193,7 @@ export async function getUserInGroupByGroupId(
     try {
         const [rows, packet] = await pool.query<RowDataPacket[]>(sql, [input.groupId])
         if(rows.length <= 0){
-            return {success : false, code : "GROUP_NOT_EXIST"}
+            return {success : false, code : "GROUP_NOT_FOUND"}
         }
         const data = rows as MemberData[]
         return {success: true, data}
@@ -135,43 +204,11 @@ export async function getUserInGroupByGroupId(
         return {success : false, code}
     }
 }
-
-export async function getGroupById<F extends GroupFields[]>(
-    input : GetGroupByIdInput<F>
-) : Promise<RepoResult<GetGroupByIdCode, GetGroupData<F>>> {
-    let success = false
-    let code : GetGroupByIdCode | undefined = undefined
-    let data : GetGroupData<F> | undefined = undefined
-    let fields : string
-    if(input.field == undefined)
-        fields = "id, name, last_message_id as lastMessageId, created_at as createdAt"
-    else
-        fields = getGetField(input.field)
-    
-    const sql = `SELECT ${fields} FROM chat_group WHERE id = ?;`
-    try {
-        const [rows, packet] = await pool.query<RowDataPacket[]>(sql, input.id)
-        success = true
-        if(rows.length <= 0) {
-            code = "GROUP_NOT_EXIST"
-        } else data = rows[0] as GetGroupData<F>
-    } catch (err){
-        const e = err as any
-        if(e.code == 'ER_BAD_FIELD_ERROR')
-            code = "INVALID_FIELD"
-        else{
-            code = "INTERNAL_ERROR"
-            console.log(err)
-        }
-    }
-    return {success, code, data}
-}
-
 export async function getUserInGroupByKey<F extends UserInGroupFields[]>(
-    input : GetUserInGroupInput<F>
-) : Promise<RepoResult<GetUserInGroupCode, GetUserInGroupData<F>>>  {
+    input : GetUserInGroupByKeyInput<F>
+) : Promise<RepoResult<GetUserInGroupByKeyCode, GetUserInGroupData<F>>>  {
     let success = false
-    let code : GetUserInGroupCode | undefined = undefined
+    let code : GetUserInGroupByKeyCode | undefined = undefined
     let data : GetUserInGroupData<F> | undefined = undefined
     let fields : string
     if(input.field == undefined)
@@ -198,7 +235,6 @@ export async function getUserInGroupByKey<F extends UserInGroupFields[]>(
     }
     return {success, code, data}
 }
-
 export async function deleteUserInGroupByKey(
     input : DeleteUserInGroupInput
 ) : Promise<RepoResult<DeleteUserInGroupCode>> {

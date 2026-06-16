@@ -6,29 +6,33 @@ import { RepoResult, User, UserFields, FileFields, File } from "../../shared/typ
 
 type GetFileByIdCode = "FILE_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
 
-type GetFileResult<F extends FileFields[]> = {
+interface GetFileByIdInput<F>{
+    fileId : number,
+    fields : F
+}
+
+type GetFileData<F extends FileFields[]> = {
     [K in F[number]]: File[K]
 }
 
 export async function getFileById <F extends FileFields[]>(
-    id: number,
-    fields : F
-): Promise<RepoResult<GetFileByIdCode, GetFileResult<F> | undefined>> {
+    input : GetFileByIdInput<F>
+): Promise<RepoResult<GetFileByIdCode, GetFileData<F> | undefined>> {
     let success = false
     let code: GetFileByIdCode = "OK"
-    let data: GetFileResult<F> | undefined = undefined
+    let data: GetFileData<F> | undefined = undefined
 
-    const fields_str = getGetField(fields)
+    const fields_str = getGetField(input.fields)
 
     const sql = `SELECT ${fields_str} FROM file WHERE id = ?;`
     
     try{
-        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [id])
+        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [input.fileId])
         if(rows.length == 0) {
             code = "FILE_NOT_FOUND"
         } else {
             success = true
-            data = rows[0] as GetFileResult<F>
+            data = rows[0] as GetFileData<F>
         }
     } catch(err){
 

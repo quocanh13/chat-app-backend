@@ -46,29 +46,24 @@ export async function getUserById(id: number) : Promise<ServiceResult<GetUserByI
     return {success, code, data}
 }
 
-
-
 export async function updateUser(user: UpdateUserInput) : Promise<ServiceResult<UpdateUserCode>> {
     let success = false
     let code: UpdateUserCode | undefined = undefined
-    let data = undefined
     if(user.avatarFileId != undefined && user.avatarFileId != null){
-        const permission = await getFilePermission(user.id, user.avatarFileId)
-        if(!permission.read){
-            code = "AVATAR_ACCESS_DENIED"
-            return {success, code, data}
+        const getFilePermissionResult = await getFilePermission({userId : user.id, fileId : user.avatarFileId})
+        if(getFilePermissionResult.success && !getFilePermissionResult.data?.permission.owner){
+            return {success : false, code : "AVATAR_ACCESS_DENIED"}
         }
     }
 
-    const repo_res = await UserRepo.updateUser(user)
-    if(!repo_res.success){
-        if(repo_res.code == "USER_NOT_FOUND")
-            code = "USER_NOT_FOUND"
-        else if(repo_res.code == "EMPTY_FIELD") {
-            code = "EMPTY_FIELD"
-        }
-    } else {
-        success = true
-    }
-    return {success, code, data}
+    const updateUserByIdResult = await UserRepo.updateUserById(user)
+    if(updateUserByIdResult.success)
+        return {success : true}
+
+    if(updateUserByIdResult.code == "USER_NOT_FOUND")
+        code = "USER_NOT_FOUND"
+    else if(updateUserByIdResult.code == "EMPTY_FIELD")
+        code = "EMPTY_FIELD"
+    
+    return {success, code}
 }

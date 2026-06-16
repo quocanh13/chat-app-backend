@@ -1,5 +1,5 @@
 import { PoolConnection } from "mysql2/promise"
-import { queryTransaction } from "../../configs/transaction.js"
+import { queryTransaction } from "../../utils/sql.js"
 import { RepoResult, ServiceResult } from "../../shared/types.js"
 import { getFilePermission } from "file"
 import * as GroupRepo from "./group.repository.js"

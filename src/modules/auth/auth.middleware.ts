@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express"
 import * as AuthService from "./auth.service.js"
-import { ErrorResponse } from "../../shared/types.js"
+import { ErrorResponse, SocketAuthError } from "../../shared/types.js"
+import { DefaultEventsMap, Socket } from "socket.io"
+import { verify } from "../../utils/jwt.js"
 
 export function verifyUser(req: Request, res: Response, next : NextFunction){
     let token = req.headers.authorization
@@ -40,4 +42,21 @@ export function verifyUser(req: Request, res: Response, next : NextFunction){
         req.user = serviceResult.data
         next()
     }
+}
+
+export function verifyUserSocket(socket : Socket, next : (err? : Error) => void){
+    const token = socket.handshake.auth.token
+
+    if(token == undefined) {
+        return next(new SocketAuthError("TOKEN_NOT_FOUND", "Token is not found"))
+    }
+
+    const res = verify(token)
+    if(res == "INVALID_TOKEN")
+        return next(new SocketAuthError("INVALID_TOKEN", "Invalid token"))
+    else if(res == "TOKEN_EXPIRED")
+        return next(new SocketAuthError("TOKEN_EXPIRED", "Token is expired"))
+    
+    socket.user = res
+    next()
 }

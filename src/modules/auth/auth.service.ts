@@ -1,6 +1,6 @@
 import { JWTPayload, ServiceResult } from "../../shared/types.js"
 import * as hash from "../../utils/hash.js"
-import * as AuthRepo from "./auth.repository.js"
+import {UserService} from "user"
 import { sign, verify } from "../../utils/jwt.js"
 
 type RegisterCode = "USERNAME_EXISTS" | "INTERNAL_ERROR"
@@ -17,7 +17,14 @@ interface LoginInput{
     password: string, 
 }
 
-export async function register(input: RegisterInput) : Promise<ServiceResult<RegisterCode | undefined>>{
+interface RegisterData{
+    id : number
+}
+interface LoginData{
+    token : string
+}
+
+export async function register(input: RegisterInput) : Promise<ServiceResult<RegisterCode, RegisterData>>{
     let success = false
     let code: RegisterCode | undefined = undefined
     let data = undefined 
@@ -27,12 +34,12 @@ export async function register(input: RegisterInput) : Promise<ServiceResult<Reg
         passwordHash: await hash.hash(input.password),
         name: input.name
     }
-    const res = await AuthRepo.createUser(user, ["username", "passwordHash", "name"])
-    if(res.success){
-        
+    const createUserResult = await UserService.createUser(user)
+    if(createUserResult.success){
+        return {success: true, data: createUserResult.data}
     }
     else
-        if(res.code == "DUPLICATE_ENTRY")
+        if(createUserResult.code == "USERNAME_EXISTS")
             code = "USERNAME_EXISTS"
         else
             code = "INTERNAL_ERROR"
@@ -40,34 +47,33 @@ export async function register(input: RegisterInput) : Promise<ServiceResult<Reg
     return {success, code, data}
 }
 
-export async function login(input: LoginInput) {
+export async function login(
+    input: LoginInput
+): Promise<ServiceResult<LoginCode, LoginData>> {
     let success = false
     let code: LoginCode | undefined = undefined
-    let data = undefined 
 
-    const repo_res = await AuthRepo.getUserByUsername(input.username, ["passwordHash", "id"])
-    if(!repo_res.success){
-        if(repo_res.code == "USER_NOT_FOUND")
+    const getUserByUsernameResult = await UserService.getUserByUsername({
+        username : input.username,
+        fields : ["passwordHash", "id", "username"]
+    })
+    if(!getUserByUsernameResult.success){
+        if(getUserByUsernameResult.code == "USER_NOT_FOUND")
             code = "USERNAME_NOT_EXISTS"
         else
             code = "INTERNAL_ERROR"
-    } else {
-        const passwordHash = repo_res.data?.passwordHash
-        if(passwordHash == undefined)
-            code = "INTERNAL_ERROR"
-        else{
-            const valid = await hash.compare(input.password, passwordHash)
-            if(valid){
-                success = true
-                data = {
-                    token: sign({username: input.username, id: repo_res.data?.id})
-                }
-            } else {
-                code = "INVALID_PASSWORD"
-            }
-        }
-    }
-    return {success, code, data}
+        return {success : false, code}
+    } 
+
+    const passwordHash = getUserByUsernameResult.data?.passwordHash
+    if(passwordHash == undefined)
+        return {success : false, code : "INTERNAL_ERROR"}
+
+    const valid = await hash.compare(input.password, passwordHash)
+    if(!valid)
+        return {success : false, code : "INVALID_PASSWORD"}
+    const data = {token: sign({username: input.username, id: getUserByUsernameResult.data?.id})}
+    return {success : true, data}
 }
 
 export function verifyUser(token: string) : ServiceResult<VerifyUserCode, JWTPayload>{

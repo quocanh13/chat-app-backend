@@ -13,6 +13,7 @@ app.use("/", (req, res, next)=>{
     next()
 })
 
+app.use(express.json())
 app.use(authRouter)
 app.use(userRouter)
 app.use(groupRouter)

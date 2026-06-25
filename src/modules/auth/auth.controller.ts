@@ -16,29 +16,27 @@ export async function register(req: Request, res: Response){
         return res.status(400).json(errorResponse)
     }
 
-    const sv_res = await authService.register(dto.data)
-    if(!sv_res.success){
-        if(sv_res.code == "USERNAME_EXISTS") {
-            errorResponse = {
-                error: "USERNAME_EXISTS",
-                detail: {
-                    username: ["Username exists"]
-                }
-            }
-            return res.status(400).json(errorResponse)
-        } else {
-            errorResponse = {
-                error: "INTERNAL_ERROR",
-                detail: {
-                    server: ["Server error"]
-                }
-            }
-            return res.status(500).json(errorResponse)
-        }
+    const registerResult = await authService.register(dto.data)
+    if(registerResult.success)
+        return res.status(201).json(registerResult.data)
 
-    } else {
-        return res.sendStatus(201)
+    if(registerResult.code == "USERNAME_EXISTS") {
+        errorResponse = {
+            error: "USERNAME_EXISTS",
+            detail: {
+                username: ["Username exists"]
+            }
+        }
+        return res.status(400).json(errorResponse)
     }
+    
+    errorResponse = {
+        error: "INTERNAL_ERROR",
+        detail: {
+            server: ["Server error"]
+        }
+    }
+    return res.status(500).json(errorResponse)
 }
 
 export async function login(req: Request, res: Response) {
@@ -55,39 +53,37 @@ export async function login(req: Request, res: Response) {
         return res.status(400).json(errorResponse)
     }
 
-    const sv_res = await authService.login(dto.data)
-    if(!sv_res.success){
-        if(sv_res.code == "USERNAME_NOT_EXISTS") {
-            errorResponse = {
-                error: "USERNAME_NOT_EXISTS",
-                detail: {
-                    username: ["Username does not exists"]
-                },
-                message : "Username does not exist"
-            }
-            return res.status(404).json(errorResponse)
-        }
-        else if(sv_res.code == "INVALID_PASSWORD"){
-            errorResponse = {
-                error: "INVALID_PASSWORD",
-                detail: {
-                    password: ["Invalid password"]
-                },
-                message : "Invalid password"
-            }
-            return res.status(401).json(errorResponse)
-        } else {
-            errorResponse = {
-                error: "INTERNAL_ERROR",
-                detail: {
-                    server: ["Server error"]
-                },
-                message : "Server error"
-            }
-            return res.status(500).json(errorResponse)
-        }
+    const loginResult = await authService.login(dto.data)
+    if(loginResult.success)
+        return res.status(200).json(loginResult.data)
 
+    if(loginResult.code == "USERNAME_NOT_EXISTS") {
+        errorResponse = {
+            error: "USERNAME_NOT_EXISTS",
+            detail: {
+                username: ["Username does not exists"]
+            },
+            message : "Username does not exist"
+        }
+        return res.status(404).json(errorResponse)
+    }
+    else if(loginResult.code == "INVALID_PASSWORD"){
+        errorResponse = {
+            error: "INVALID_PASSWORD",
+            detail: {
+                password: ["Invalid password"]
+            },
+            message : "Invalid password"
+        }
+        return res.status(401).json(errorResponse)
     } else {
-        return res.status(200).json(sv_res.data)
-    }  
+        errorResponse = {
+            error: "INTERNAL_ERROR",
+            detail: {
+                server: ["Server error"]
+            },
+            message : "Server error"
+        }
+        return res.status(500).json(errorResponse)
+    }
 }

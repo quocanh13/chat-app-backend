@@ -9,9 +9,20 @@ type GetUserByUsernameCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR
 type UpdateUserCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "EMPTY_FIELD" | "REFERENCE_ERROR" | "OK"; 
 
 interface CreateUserInput{
-    username: string,
-    passwordHash: string,
-    name: string,
+    user : {
+        username: string,
+        passwordHash: string,
+        name: string,
+    }
+    fields?: UserFields[]
+}
+interface GetUserByIdInput<F extends UserFields[]>{
+    id : number,
+    fields : F
+}
+interface GetUserByUsernameInput<F extends UserFields[]>{
+    username : string,
+    fields : F
 }
 interface UpdateUserInput{
     id: number
@@ -22,22 +33,26 @@ interface UpdateUserInput{
     avatarFileId?: number | null
 }
 
-type GetUserResult<F extends UserFields[]> = {
+interface CreateUserData{
+    id : number
+}
+type GetUserData<F extends UserFields[]> = {
     [K in F[number]]: User[K]
 }
 
 export async function createUser(
-    user: CreateUserInput, 
-    fields: UserFields[] | undefined = undefined
-) : Promise<RepoResult<CreateUserCode, undefined>>{
-    let success = false, code: CreateUserCode = "OK", data = undefined
+    input: CreateUserInput
+) : Promise<RepoResult<CreateUserCode, CreateUserData>>{
+    let code: CreateUserCode = "OK"
+    let data: CreateUserData
 
-    const {field, placeholder, values} = getInsertField(user, fields)
+    const {field, placeholder, values} = getInsertField(input.user, input.fields)
     const sql = `INSERT INTO USER (${field}) VALUES (${placeholder})`
     
     try{
-        const res = await pool.query(sql, values)
-        success = true
+        const res = await pool.query<ResultSetHeader>(sql, values)
+        data = {id : res[0].insertId}
+        return {success : true, data}
     } catch(err){
         const e = err as any
         if(e?.code == "ER_DUP_ENTRY") {
@@ -46,30 +61,28 @@ export async function createUser(
             console.error(err)
             code = "INTERNAL_ERROR"
         }
+        return {success : false, code}
     }
-
-    return {success, code, data}
 }
 export async function getUserById <F extends UserFields[] >(
-    id: number, 
-    fields: F
-) : Promise<RepoResult<GetUserByIdCode, GetUserResult<F> | undefined>> {
+    input : GetUserByIdInput<F>
+) : Promise<RepoResult<GetUserByIdCode, GetUserData<F> | undefined>> {
 
     let success = false
     let code: GetUserByIdCode = "OK"
-    let data: GetUserResult<F> | undefined = undefined
+    let data: GetUserData<F> | undefined = undefined
 
-    const fields_str = getGetField(fields)
+    const fields_str = getGetField(input.fields)
 
     const sql = `SELECT ${fields_str} FROM user WHERE id = ?;`
     
     try{
-        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [id])
+        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [input.id])
         if(rows.length == 0) {
             code = "USER_NOT_FOUND"
         } else {
             success = true
-            data = rows[0] as GetUserResult<F>
+            data = rows[0] as GetUserData<F>
         }
     } catch(err){
         const e = err as any
@@ -124,25 +137,24 @@ export async function updateUserById(
     return {success, code, data} 
 }
 export async function getUserByUsername <F extends UserFields[] >(
-    username: string, 
-    fields: F
-) : Promise<RepoResult<GetUserByUsernameCode, GetUserResult<F> | undefined>> {
+    input : GetUserByUsernameInput<F>
+) : Promise<RepoResult<GetUserByUsernameCode, GetUserData<F> | undefined>> {
 
     let success = false
     let code: GetUserByUsernameCode = "OK"
-    let data: GetUserResult<F> | undefined = undefined
+    let data: GetUserData<F> | undefined = undefined
 
-    const fields_str = getGetField(fields)
+    const fields_str = getGetField(input.fields)
 
     const sql = `SELECT ${fields_str} FROM user WHERE username = ?;`
     
     try{
-        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [username])
+        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [input.username])
         if(rows.length == 0) {
             code = "USER_NOT_FOUND"
         } else {
             success = true
-            data = rows[0] as GetUserResult<F>
+            data = rows[0] as GetUserData<F>
         }
     } catch(err){
         

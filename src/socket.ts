@@ -25,10 +25,6 @@ export function initSocketServer(httpServer : http.Server){
     })
 }
 
-function verifyJWT(socket: Socket, next: ){
-
-}
-
 export function getIO() : Server{
     if(io)
         return io

@@ -8,7 +8,10 @@
     "outDir": "./dist",
     "paths": {
         "auth" : ["./src/modules/auth/index.ts"],
-        "file" : ["./src/modules/file/index.ts"]
+        "file" : ["./src/modules/file/index.ts"],
+        "group" : ["./src/modules/group/index.ts"],
+        "message" : ["./src/modules/message/index.ts"],
+        "user" : ["./src/modules/user/index.ts"],
     },
     "strict": true,
   }

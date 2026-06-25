@@ -3,10 +3,16 @@ import pool from "../../configs/database.js";
 import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
 import { RepoResult, User, UserFields, FileFields, File } from "../../shared/types.js";
 
+type CreateUserCode = "DUPLICATE_ENTRY" | "INTERNAL_ERROR" | "OK";
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
-
+type GetUserByUsernameCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";
 type UpdateUserCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "EMPTY_FIELD" | "REFERENCE_ERROR" | "OK"; 
 
+interface CreateUserInput{
+    username: string,
+    passwordHash: string,
+    name: string,
+}
 interface UpdateUserInput{
     id: number
     username?: string,
@@ -18,6 +24,31 @@ interface UpdateUserInput{
 
 type GetUserResult<F extends UserFields[]> = {
     [K in F[number]]: User[K]
+}
+
+export async function createUser(
+    user: CreateUserInput, 
+    fields: UserFields[] | undefined = undefined
+) : Promise<RepoResult<CreateUserCode, undefined>>{
+    let success = false, code: CreateUserCode = "OK", data = undefined
+
+    const {field, placeholder, values} = getInsertField(user, fields)
+    const sql = `INSERT INTO USER (${field}) VALUES (${placeholder})`
+    
+    try{
+        const res = await pool.query(sql, values)
+        success = true
+    } catch(err){
+        const e = err as any
+        if(e?.code == "ER_DUP_ENTRY") {
+            code = "DUPLICATE_ENTRY"
+        } else {
+            console.error(err)
+            code = "INTERNAL_ERROR"
+        }
+    }
+
+    return {success, code, data}
 }
 export async function getUserById <F extends UserFields[] >(
     id: number, 
@@ -54,7 +85,6 @@ export async function getUserById <F extends UserFields[] >(
     
     return {success, code, data} 
 }
-
 export async function updateUserById(
     user: UpdateUserInput, 
     fields: UserFields[] | undefined = undefined
@@ -93,4 +123,43 @@ export async function updateUserById(
     }
     return {success, code, data} 
 }
+export async function getUserByUsername <F extends UserFields[] >(
+    username: string, 
+    fields: F
+) : Promise<RepoResult<GetUserByUsernameCode, GetUserResult<F> | undefined>> {
+
+    let success = false
+    let code: GetUserByUsernameCode = "OK"
+    let data: GetUserResult<F> | undefined = undefined
+
+    const fields_str = getGetField(fields)
+
+    const sql = `SELECT ${fields_str} FROM user WHERE username = ?;`
+    
+    try{
+        const [rows, fields] = await pool.query<RowDataPacket[]>(sql, [username])
+        if(rows.length == 0) {
+            code = "USER_NOT_FOUND"
+        } else {
+            success = true
+            data = rows[0] as GetUserResult<F>
+        }
+    } catch(err){
+        
+        const e = err as any
+
+        if(e?.code == "ER_PARSE_ERROR")
+            code = "SYNTAX_ERROR"
+        else if(e?.code == "ER_BAD_FIELD_ERROR")
+            code = "INVALID_COLUMN"
+        else {
+            console.error(err)
+            code = "INTERNAL_ERROR"
+        }
+    }
+    
+    return {success, code, data} 
+}
+
+
 

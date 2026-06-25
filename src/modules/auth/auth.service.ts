@@ -17,7 +17,6 @@ interface LoginInput{
     password: string, 
 }
 
-
 export async function register(input: RegisterInput) : Promise<ServiceResult<RegisterCode | undefined>>{
     let success = false
     let code: RegisterCode | undefined = undefined
@@ -29,8 +28,9 @@ export async function register(input: RegisterInput) : Promise<ServiceResult<Reg
         name: input.name
     }
     const res = await AuthRepo.createUser(user, ["username", "passwordHash", "name"])
-    if(res.success)
-        success = true 
+    if(res.success){
+        
+    }
     else
         if(res.code == "DUPLICATE_ENTRY")
             code = "USERNAME_EXISTS"

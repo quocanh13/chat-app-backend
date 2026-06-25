@@ -1,5 +1,5 @@
 export type UserFields = "id" | "username" | "passwordHash" | "name" | "email" | "avatarFileId" | "createdAt"
-export type FileFields = "id" | "name" | "mimeType" | "type" | "size" | "userId" | "uploadedAt"
+export type FileFields = "id" | "name" | "storedName" | "mimeType" | "type" | "size" | "userId" | "uploadedAt"
 export type GroupFields = "id" | "name" | "avatarFileId" | "lastMessageId" | "createdAt"
 export type UserInGroupFields = "userId" | "groupId" | "role" | "joinedAt"
 
@@ -21,8 +21,9 @@ export type FilePermission = {
 export type File = {
     id: number,
     name: string,
+    storedName: string,
     mimeType: string,
-    type: string,
+    type: "USER_AVATAR" | "GROUP_AVATAR" | "MESSAGE",
     size: number,
     userId: number,
     uploadedAt: Date
@@ -47,6 +48,21 @@ export type ErrorResponse = {
     detail?: Record<string, unknown>,
     message?: string
 }
+export type SocketResponse = {
+    requestId?: string,
+    action?: string,
+    success: boolean,
+    error?: string,
+    detail?: Record<string, unknown>,
+    message?: string
+}
+export class SocketAuthError extends Error{
+    public code: string
+    constructor(code : string, message : string){
+        super(message)
+        this.code = code
+    }
+}
 
 export type RepoResult<Code = undefined, Data = undefined> = {
     success: boolean,
@@ -65,12 +81,8 @@ export type JWTPayload = {
     id: number
 }
 
-declare global {
-    namespace Express {
-        interface Request {
-            user?: JWTPayload;
-        }
-    }
-}
+
+
+
 
 export {};

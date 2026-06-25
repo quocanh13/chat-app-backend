@@ -121,7 +121,7 @@ export async function getGroup(
     return {code : "INTERNAL_ERROR", success}
 }
 
-async function isMember(
+export async function isMember(
     input : IsMemberInput
 ) : Promise<ServiceResult<IsMemberCode, {isMember : boolean}>> {
     let success = false
@@ -142,7 +142,7 @@ async function isMember(
     return {success, code, data}
 }
 
-async function isHost(
+export async function isHost(
     input : IsHostInput
 ) : Promise<ServiceResult<IsHostCode, {isHost : boolean}>> {
     let success = false

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import * as AuthService from "./auth.service.js"
 import { ErrorResponse, SocketAuthError } from "../../shared/types.js"
-import { DefaultEventsMap, Socket } from "socket.io"
+import { Socket } from "socket.io"
 import { verify } from "../../utils/jwt.js"
 
 export function verifyUser(req: Request, res: Response, next : NextFunction){

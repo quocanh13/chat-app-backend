@@ -2,7 +2,7 @@ import { ResultSetHeader } from "mysql2";
 import pool from "../../configs/database.js";
 import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
 import { GroupFields, RepoResult, Group, UserInGroupFields, UserInGroup } from "../../shared/types.js";
-import { FieldPacket, PoolConnection, QueryResult, RowDataPacket } from "mysql2/promise";
+import { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 type CreateGroupCode = "GROUP_NAME_TOO_LONG" | "INVALID_GROUP_TYPE" | "INTERNAL_ERROR" 
 type GetGroupByIdCode =  "GROUP_NOT_FOUND" | "INVALID_FIELD" | "INTERNAL_ERROR"

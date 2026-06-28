@@ -1,9 +1,7 @@
-import { PoolConnection } from "mysql2/promise"
 import { queryTransaction } from "../../utils/sql.js"
-import { RepoResult, ServiceResult } from "../../shared/types.js"
+import { ServiceResult } from "../../shared/types.js"
 import { getFilePermission } from "file"
 import * as GroupRepo from "./group.repository.js"
-import { codec, success } from "zod"
 
 type CreateGroupCode =  
     "GROUP_NAME_TOO_LONG" | "USER_ALREADY_IN_GROUP" | "INVALID_ROLE" |

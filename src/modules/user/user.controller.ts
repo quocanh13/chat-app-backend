@@ -1,4 +1,4 @@
-import {NextFunction, Request, Response} from "express"
+import {Request, Response} from "express"
 import { GetUserByIdSchema, PatchUserSchema, PutUserSchema } from "./user.dto.js"
 import { ErrorResponse } from "../../shared/types.js"
 import * as UserService from "./user.service.js"
@@ -18,7 +18,10 @@ export async function getUserById(req: Request, res: Response) {
 
     }
 
-    const serviceResult = await UserService.getUserById(dto.data.id)
+    const serviceResult = await UserService.getUserById({
+        id : dto.data.id, 
+        fields : ["id", "username", "name", "avatarFileId"]}
+    )
 
     if(!serviceResult.success){
         if(serviceResult.code == "USER_NOT_FOUND") {

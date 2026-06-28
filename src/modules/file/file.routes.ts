@@ -1,6 +1,6 @@
 import { Router } from "express"
 import { getFileInformation, postFile } from "./file.controller.js"
-import { multerError, uploadFile } from "./file.middleware.js"
+import { uploadFile } from "./file.middleware.js"
 import { verifyUser } from "auth"
 
 const router = Router()

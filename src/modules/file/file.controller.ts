@@ -48,7 +48,11 @@ export async function getFileInformation(req: Request, res: Response) {
         return res.status(400).json(errorResponse)
     }
 
-    const getFileInformationResult = await FileService.getFileInformation(dto.data)
+    const getFileInformationResult = await FileService.getFileInformation({
+        userId : dto.data.userId,
+        fileId : dto.data.fileId,
+        fields : ["id", "name", "size", "mimeType", "storedName", "userId"]
+    })
     if(getFileInformationResult.success)
         return res.status(200).json(getFileInformationResult.data)
 

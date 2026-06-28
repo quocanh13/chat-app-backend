@@ -1,7 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from "mysql2"
 import pool from "../../configs/database.js";
 import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
-import { RepoResult, User, UserFields, FileFields, File } from "../../shared/types.js";
+import { RepoResult, User, UserFields} from "../../shared/types.js";
 
 type CreateUserCode = "DUPLICATE_ENTRY" | "INTERNAL_ERROR" | "OK";
 type GetUserByIdCode = "USER_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN" | "OK";

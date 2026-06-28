@@ -1,7 +1,7 @@
 import { Socket } from "socket.io";
 import { SendMessageSchema } from "./message.dto.js";
 import * as MessageService from "./message.service.js"
-import { ErrorResponse, SocketResponse } from "../../shared/types.js";
+import { SocketResponse } from "../../shared/types.js";
 
 type AckFunction = (data: object) => void
 

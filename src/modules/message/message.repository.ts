@@ -3,12 +3,12 @@ import pool from "../../configs/database.js";
 import { getInsertField } from "../../utils/sql.js";
 import { ServiceResult } from "../../shared/types.js";
 
-type CreateMessageCode = "INTERNAL_ERROR" | "INVALID_FIELD" | "REFERENCE_ERROR"
+type CreateMessageCode = "INTERNAL_ERROR" | "INVALID_FIELD" | "REFERENCE_ERROR" | "DATA_TOO_LONG"
 
 interface CreateMessageInput{
     userId: number,
     groupId: number,
-    fileId: number | null,
+    fileId?: number | null,
     content: string | null
 }
 
@@ -32,6 +32,8 @@ export async function createMessage(
         const e = err as any
         if(e.code == "ER_NO_REFERENCED_ROW_2")
             code = "REFERENCE_ERROR"
+        else if(e.code == "ER_DATA_TOO_LONG")
+            code = "DATA_TOO_LONG"
         else if(e.code == "ER_BAD_FIELD_ERROR")
             code = "INVALID_FIELD"
         else{

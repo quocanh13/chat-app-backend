@@ -3,12 +3,12 @@ import { isMember } from "group"
 import { getFilePermission } from "file"
 import * as MessageRepo from "./message.repository.js"
 
-type SendMessageCode = "INTERNAL_ERROR" | "USER_NOT_MEMBER" | "FILE_NOT_FOUND" | "FILE_ACCESS_DENIED"
+type SendMessageCode = "INTERNAL_ERROR" | "USER_NOT_MEMBER" | "FILE_NOT_FOUND" | "FILE_ACCESS_DENIED" | "CONTENT_TOO_LONG"
 
 interface SendMessageInput{
     userId: number,
     groupId: number,
-    fileId: number | null,
+    fileId?: number | null,
     content: string
 }
 
@@ -29,14 +29,20 @@ export async function sendMessage(
     if(!isMemberResult.data?.isMember)
         return {success : false, code : "USER_NOT_MEMBER"}
 
-    if(input.fileId != null){
-        const filePermissionResult = await getFilePermission(input)
+    if(input.fileId != null && input.fileId != undefined){
+        const filePermissionResult = await getFilePermission({
+            userId : input.userId,
+            fileId : input.fileId,
+            fields : ["name"]
+        })
         if(!filePermissionResult.success){
             if(filePermissionResult.code == "FILE_NOT_FOUND")
                 return {success : false, code : "FILE_NOT_FOUND"}
         }
         if(!filePermissionResult.data?.permission.owner)
             return {success : false, code : "FILE_ACCESS_DENIED"}
+
+        input.content = filePermissionResult.data.file!.name
     }
 
     const sendMessageResult = await MessageRepo.createMessage(input)
@@ -44,8 +50,8 @@ export async function sendMessage(
         return {success : true}
 
     let code: SendMessageCode
-    if(sendMessageResult.code == "INTERNAL_ERROR")
-        code = "INTERNAL_ERROR"
+    if(sendMessageResult.code == "DATA_TOO_LONG")
+        code = "CONTENT_TOO_LONG"
     else
         code = "INTERNAL_ERROR"
     return {success : false, code}

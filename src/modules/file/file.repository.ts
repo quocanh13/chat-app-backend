@@ -1,7 +1,7 @@
 import {ResultSetHeader, RowDataPacket} from "mysql2"
 import pool from "../../configs/database.js";
-import { getGetField, getInsertField, getUpdateField } from "../../utils/sql.js";
-import { RepoResult, User, UserFields, FileFields, File } from "../../shared/types.js";
+import { getGetField, getInsertField } from "../../utils/sql.js";
+import { RepoResult, FileFields, File } from "../../shared/types.js";
 
 type CreateFileCode = "INTERNAL_ERROR" | "FILE_NAME_TOO_LONG" | "SYNTAX_ERROR" | "INVALID_TYPE" | "INVALID_FIELD";
 type GetFileByIdCode = "FILE_NOT_FOUND" | "INTERNAL_ERROR" | "SYNTAX_ERROR" | "INVALID_COLUMN";
@@ -59,7 +59,6 @@ export async function getFileById <F extends FileFields[]>(
     let success = false
     let code: GetFileByIdCode | undefined = undefined
     let data: GetFileData<F> | undefined = undefined
-
     const fields_str = getGetField(input.fields)
 
     const sql = `SELECT ${fields_str} FROM file WHERE id = ?;`

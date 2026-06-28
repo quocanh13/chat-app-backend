@@ -45,7 +45,7 @@ export function verifyUser(req: Request, res: Response, next : NextFunction){
 }
 
 export function verifyUserSocket(socket : Socket, next : (err? : Error) => void){
-    const token = socket.handshake.auth.token
+    const token = socket.handshake.headers.token ? socket.handshake.headers.token : socket.handshake.auth.token
 
     if(token == undefined) {
         return next(new SocketAuthError("TOKEN_NOT_FOUND", "Token is not found"))

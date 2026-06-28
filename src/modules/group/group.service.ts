@@ -3,7 +3,20 @@ import { queryTransaction } from "../../utils/sql.js"
 import { RepoResult, ServiceResult } from "../../shared/types.js"
 import { getFilePermission } from "file"
 import * as GroupRepo from "./group.repository.js"
+import { codec, success } from "zod"
 
+type CreateGroupCode =  
+    "GROUP_NAME_TOO_LONG" | "USER_ALREADY_IN_GROUP" | "INVALID_ROLE" |
+    "INVALID_GROUP_TYPE" | "USER_OR_GROUP_NOT_FOUND" | "INTERNAL_ERROR"
+type GetGroupByIdCode = "GROUP_NOT_FOUND" | "ONLY_MEMBER_CAN_ACCESS" | "INTERNAL_ERROR"
+type UpdateGroupCode = 
+    "GROUP_NOT_FOUND" | "ONLY_HOST_CAN_UPDATE" | "AVATAR_ACCESS_DENIED" | "AVATAR_NOT_FOUND" | 
+    "EMPTY_FIELD" | "INTERNAL_ERROR"
+type IsHostCode = "INTERNAL_ERROR"
+type IsMemberCode = "INTERNAL_ERROR"
+type AddUserToGroupCode = "ONLY_HOST_CAN_ADD_MEMBER" | "USER_OR_GROUP_NOT_FOUND" | "USER_ALREADY_IN_GROUP"  | "INTERNAL_ERROR"
+type GetMemberListCode = "INTERNAL_ERROR" | "NOT_GROUP_MEMBER" | "GROUP_NOT_FOUND"
+type DeleteMemberCode = "ONLY_HOST_CAN_DELETE_MEMBER" | "HOST_CANNOT_DELETE_HOST" | "INTERNAL_ERROR"
 
 interface CreateGroupInput {
     name: string,
@@ -12,7 +25,6 @@ interface CreateGroupInput {
 interface GetGroupInput {
     groupId : number,
     userId : number,
-    includeMember: boolean
 }
 interface UpdateGroupInput{
     groupId : number,
@@ -33,6 +45,10 @@ interface AddMemeberToGroupInput {
     userId : number,
     hostId : number
 }
+interface GetMemberListInput{
+    groupId: number,
+    userId: number
+}
 interface DeleteMemberInput {
     groupId : number,
     memberId : number,
@@ -44,26 +60,16 @@ interface CreateGroupData {
 }
 interface MemberData{
     userId : number,
-    role : "direct" | "host",
+    role : "member" | "host",
+}
+interface GetMemberListData{
+    members: MemberData[]
 }
 interface GetGroupByIdData {
     id? : number,
     name? : string,
-    type? : "direct" | "group",
-    members? : MemberData[]
+    avatarFileId?: number | null 
 }
-
-type CreateGroupCode =  
-    "GROUP_NAME_TOO_LONG" | "USER_ALREADY_IN_GROUP" | "INVALID_ROLE" |
-    "INVALID_GROUP_TYPE" | "USER_OR_GROUP_NOT_FOUND" | "INTERNAL_ERROR"
-type GetGroupByIdCode = "GROUP_NOT_FOUND" | "ONLY_MEMBER_CAN_ACCESS" | "INTERNAL_ERROR"
-type UpdateGroupCode = 
-    "GROUP_NOT_FOUND" | "ONLY_HOST_CAN_UPDATE" | "AVATAR_ACCESS_DENIED" | "AVATAR_NOT_FOUND" | 
-    "EMPTY_FIELD" | "INTERNAL_ERROR"
-type IsHostCode = "INTERNAL_ERROR"
-type IsMemberCode = "INTERNAL_ERROR"
-type AddUserToGroupCode = "ONLY_HOST_CAN_ADD_MEMBER" | "USER_OR_GROUP_NOT_FOUND" | "USER_ALREADY_IN_GROUP"  | "INTERNAL_ERROR"
-type DeleteMemberCode = "ONLY_HOST_CAN_DELETE_MEMBER" | "HOST_CANNOT_DELETE_HOST" | "INTERNAL_ERROR"
 
 
 export async function createGroup(
@@ -91,7 +97,7 @@ export async function getGroup(
 ) : Promise<ServiceResult<GetGroupByIdCode, GetGroupByIdData>> {
     let success = false
     let code : GetGroupByIdCode | undefined = undefined
-    let data : GetGroupByIdData | undefined = undefined
+
     const isMemberResult = await isMember(input)
     if(!isMemberResult.success)
         return {code : "INTERNAL_ERROR", success}
@@ -99,26 +105,15 @@ export async function getGroup(
         return {code : "ONLY_MEMBER_CAN_ACCESS" , success}
     
         
-    const getGroupByIdResult = await GroupRepo.getGroupById({id : input.groupId, field : ["id", "name", "lastMessageId"]})
-    if(!getGroupByIdResult.success){
-        if(getGroupByIdResult.code == "GROUP_NOT_FOUND")
-            code = "GROUP_NOT_FOUND"
-        else
-            code = "INTERNAL_ERROR"
-        return {code, success}
-    }
-
-    data = {...getGroupByIdResult.data}
-    if(!input.includeMember)
-        return {success : true, data}
-
-    const getMemberResult = await GroupRepo.getUserInGroupByGroupId(input)
-    if(getMemberResult.success){
-        data.members = getMemberResult.data
-        return {success : true, data}
-    }
-
-    return {code : "INTERNAL_ERROR", success}
+    const getGroupByIdResult = await GroupRepo.getGroupById({id : input.groupId, field : ["id", "name", "lastMessageId", "avatarFileId"]})
+    if(getGroupByIdResult.success)
+        return {success : true, data : getGroupByIdResult.data}
+    
+    if(getGroupByIdResult.code == "GROUP_NOT_FOUND")
+        code = "GROUP_NOT_FOUND"
+    else
+        code = "INTERNAL_ERROR"
+    return {code, success}
 }
 
 export async function isMember(
@@ -226,6 +221,32 @@ export async function addUserToGroup(
     else
         code = "INTERNAL_ERROR"
     return {success, code}
+}
+
+export async function getMemberList(
+    input : GetMemberListInput
+) : Promise<ServiceResult<GetMemberListCode, GetMemberListData>> {
+    const isMemberResult = await isMember(input)
+    if(!isMemberResult.success){
+        if(isMemberResult.code == "INTERNAL_ERROR")
+            return {success : false, code : "INTERNAL_ERROR"}
+    }
+
+    if(!isMemberResult.data?.isMember)
+        return {success : false, code : "NOT_GROUP_MEMBER"}
+
+    const getUserInGroupByGroupIdResult = await GroupRepo.getUserInGroupByGroupId(input)
+    if(getUserInGroupByGroupIdResult.success)
+        return {
+            success : true, 
+            data : {
+                members : getUserInGroupByGroupIdResult.data ? getUserInGroupByGroupIdResult.data : []
+            }
+        }
+    if(getUserInGroupByGroupIdResult.code == "GROUP_NOT_FOUND")
+        return {success : false, code : "GROUP_NOT_FOUND"}
+
+    return {success : false, code : "INTERNAL_ERROR"}
 }
 
 export async function deleteMember(

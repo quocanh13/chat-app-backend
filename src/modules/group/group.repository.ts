@@ -47,7 +47,7 @@ interface DeleteUserInGroupInput{
 
 interface MemberData{
     userId : number,
-    role : "direct" | "host",
+    role : "member" | "host",
 }
 interface CreateGroupResponseData {
     id : number

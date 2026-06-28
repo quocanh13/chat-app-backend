@@ -8,7 +8,6 @@ export const CreateGroupSchema = z.object({
 export const GetGroupSchema = z.object({
     groupId : z.int().positive(),
     userId: z.int().positive(),
-    includeMember : z.boolean()
 })
 
 export const PutGroupSchema = z.object({
@@ -29,6 +28,11 @@ export const AddMemberSchema = z.object({
     groupId : z.int().positive(),
     userId : z.int().positive(),
     hostId : z.int().positive()
+})
+
+export const GetMemberListSchema = z.object({
+    userId : z.int().positive(),
+    groupId : z.int().positive()
 })
 
 export const DeleteMemberSchema = z.object({

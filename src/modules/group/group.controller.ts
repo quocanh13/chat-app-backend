@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import * as GroupService from "./group.service.js"
 import { ErrorResponse } from "../../shared/types.js"
-import { AddMemberSchema, CreateGroupSchema, DeleteMemberSchema, GetGroupSchema, PatchGroupSchema, PutGroupSchema } from "./group.dto.js"
+import { AddMemberSchema, CreateGroupSchema, DeleteMemberSchema, GetGroupSchema, GetMemberListSchema, PatchGroupSchema, PutGroupSchema } from "./group.dto.js"
 
 export async function postGroup(req: Request, res: Response) {
     const body = {...req.body, hostId : req.user?.id}
@@ -240,6 +240,50 @@ export async function postMember(req: Request, res: Response) {
         return res.status(404).json(errorResponse)
     } 
     console.log(serviceResult)
+    errorResponse = {
+        error : "SERVER_ERROR",
+        message : "Server error",
+        detail : {server : ["Server error"]}
+    }
+    return res.status(500).json(errorResponse)
+}
+export async function getMemberList(req: Request, res: Response){
+    const input = {
+        userId: req.user?.id,
+        groupId: Number(req.params.groupId)
+    }
+    let errorResponse: ErrorResponse
+    const dto = GetMemberListSchema.safeParse(input)
+
+    if(!dto.success) {
+        errorResponse = {
+            error : "INVALID_DATA",
+            message : "Invalid data",
+            detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors}
+        }
+        return res.status(400).json(errorResponse)
+    }
+
+    const getMemberListResult = await GroupService.getMemberList(dto.data)
+    if(getMemberListResult.success)
+        return res.status(200).json(getMemberListResult.data)
+
+    if(getMemberListResult.code == "GROUP_NOT_FOUND"){
+        errorResponse = {
+            error : "GROUP_NOT_FOUND",
+            message : `Group with id = ${dto.data.groupId} not found`,
+        }
+        return res.status(404).json(errorResponse)
+    }
+
+    if(getMemberListResult.code == "NOT_GROUP_MEMBER"){
+        errorResponse = {
+            error : "NOT_GROUP_MEMBER",
+            message : `User with id = ${dto.data.userId} is not a member of group with id = ${dto.data.groupId}`,
+        }
+        return res.status(403).json(errorResponse)
+    }
+
     errorResponse = {
         error : "SERVER_ERROR",
         message : "Server error",

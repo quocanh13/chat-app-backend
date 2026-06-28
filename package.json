@@ -24,7 +24,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test-sql": "tsx ./src/test/sql.ts",
+    "test-repo": "tsx ./src/test/repo.ts",
+    "test-service": "tsx ./src/test/service.ts",
     "dev": "tsx watch ./src/server.ts"
   },
   "dependencies": {

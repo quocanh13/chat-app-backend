@@ -49,7 +49,6 @@ export type ErrorResponse = {
     message?: string
 }
 export type SocketResponse = {
-    requestId?: string,
     action?: string,
     success: boolean,
     error?: string,

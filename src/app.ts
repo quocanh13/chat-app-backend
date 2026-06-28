@@ -5,6 +5,7 @@ import { groupRouter } from "./modules/group/index.js"
 import { fileRouter } from "file"
 import multer from "multer"
 import { multerError } from "./modules/file/file.middleware.js"
+import { messageRouter } from "message"
 
 const app = express()
 
@@ -19,6 +20,7 @@ app.use(userRouter)
 app.use(groupRouter)
 app.use(groupRouter)
 app.use(fileRouter)
+app.use(messageRouter)
 
 app.use((err: unknown, req : Request, res : Response, next: NextFunction) => {
     if(err instanceof multer.MulterError)

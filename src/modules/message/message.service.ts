@@ -12,9 +12,13 @@ interface SendMessageInput{
     content: string
 }
 
+interface SendMessageData{
+    id: number
+}
+
 export async function sendMessage(
     input : SendMessageInput
-) : Promise<ServiceResult<SendMessageCode>> {
+) : Promise<ServiceResult<SendMessageCode, SendMessageData>> {
 
     const isMemberResult = await isMember({
         groupId : input.groupId, 
@@ -47,7 +51,7 @@ export async function sendMessage(
 
     const sendMessageResult = await MessageRepo.createMessage(input)
     if(sendMessageResult.success)
-        return {success : true}
+        return {success : true, data : sendMessageResult.data}
 
     let code: SendMessageCode
     if(sendMessageResult.code == "DATA_TOO_LONG")

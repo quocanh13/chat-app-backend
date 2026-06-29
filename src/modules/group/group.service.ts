@@ -15,6 +15,7 @@ type IsMemberCode = "INTERNAL_ERROR"
 type AddUserToGroupCode = "ONLY_HOST_CAN_ADD_MEMBER" | "USER_OR_GROUP_NOT_FOUND" | "USER_ALREADY_IN_GROUP"  | "INTERNAL_ERROR"
 type GetMemberListCode = "INTERNAL_ERROR" | "NOT_GROUP_MEMBER" | "GROUP_NOT_FOUND"
 type DeleteMemberCode = "ONLY_HOST_CAN_DELETE_MEMBER" | "HOST_CANNOT_DELETE_HOST" | "INTERNAL_ERROR"
+type GetGroupListCode = "INTERNAL_ERROR" | "GROUP_LIST_ACCESS_DENIED"
 
 interface CreateGroupInput {
     name: string,
@@ -52,6 +53,10 @@ interface DeleteMemberInput {
     memberId : number,
     hostId : number
 }
+interface GetGroupListInput{
+    authUserId: number,
+    userId: number
+}
 
 interface CreateGroupData {
     id : number
@@ -67,6 +72,14 @@ interface GetGroupByIdData {
     id? : number,
     name? : string,
     avatarFileId?: number | null 
+}
+interface GetGroupListData{
+    groups : {
+        id: number,
+        name: string,
+        avatarFileId: number | null,
+        lastMessageId: number | null
+    } []
 }
 
 
@@ -228,21 +241,38 @@ export async function getMemberList(
     if(!isMemberResult.success){
         if(isMemberResult.code == "INTERNAL_ERROR")
             return {success : false, code : "INTERNAL_ERROR"}
+        return {success : false, code : "INTERNAL_ERROR"}
     }
 
     if(!isMemberResult.data?.isMember)
         return {success : false, code : "NOT_GROUP_MEMBER"}
 
-    const getUserInGroupByGroupIdResult = await GroupRepo.getUserInGroupByGroupId(input)
-    if(getUserInGroupByGroupIdResult.success)
+    const getUserListByGroupIdResult = await GroupRepo.getUserListByGroupId(input)
+    if(getUserListByGroupIdResult.success)
         return {
             success : true, 
-            data : {
-                members : getUserInGroupByGroupIdResult.data ? getUserInGroupByGroupIdResult.data : []
-            }
+            data : getUserListByGroupIdResult.data
         }
-    if(getUserInGroupByGroupIdResult.code == "GROUP_NOT_FOUND")
+    if(getUserListByGroupIdResult.code == "GROUP_NOT_FOUND")
         return {success : false, code : "GROUP_NOT_FOUND"}
+
+    return {success : false, code : "INTERNAL_ERROR"}
+}
+
+export async function getGroupList(
+    input: GetGroupListInput
+) : Promise<ServiceResult<GetGroupListCode, GetGroupListData>> {
+
+    if(input.authUserId != input.userId)
+        return {success : false, code : "GROUP_LIST_ACCESS_DENIED"}
+
+    const getGroupListResult = await GroupRepo.getGroupListByUserId({
+        userId : input.userId,
+        fields : ["id", "name", "lastMessageId", "avatarFileId"]
+    })
+
+    if(getGroupListResult.success)
+        return {success : true, data : getGroupListResult.data}
 
     return {success : false, code : "INTERNAL_ERROR"}
 }

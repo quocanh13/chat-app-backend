@@ -41,7 +41,6 @@ export async function getGroup(req: Request, res: Response) {
     const input = {
         groupId : Number(req.params.groupId), 
         userId : req.user?.id, 
-        includeMember : req.query.includeMember === "1" ? true : false
     }
 
     let errorResponse: ErrorResponse

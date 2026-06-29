@@ -71,9 +71,13 @@ export function getInsertField(
     };
 }
 
-export function getGetField(fields: string[]) : string{
+export function getGetField(fields: string[], table?: string) : string{
+    if(!table)
+       table = ""
+    else
+        table += "." 
     fields = fields.map((v, i) => {
-        return `${camelToSnake(v)} as ${v}`
+        return `${table}${camelToSnake(v)} as ${v}`
     })
     return fields.join(", ")
 }

@@ -1,4 +1,4 @@
-import {email, z} from "zod";
+import {z} from "zod";
 
 export const GetUserByIdSchema = z.object({
     id: z.coerce.number().int().positive()
@@ -18,4 +18,9 @@ export const PatchUserSchema = z.object({
     name: z.string().trim().min(1).max(50).regex(/^[\p{L}\s]+$/u, "Name must not contain digit (0-9) and special symbol").optional(),
     email : z.email().max(255).optional(),
     avatarFileId : z.int().positive().nullable().optional()
+})
+
+export const GetGroupListSchema = z.object({
+    authUserId: z.int().positive(),
+    userId : z.int().positive()
 })

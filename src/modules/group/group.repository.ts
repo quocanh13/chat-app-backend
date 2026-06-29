@@ -8,8 +8,9 @@ type CreateGroupCode = "GROUP_NAME_TOO_LONG" | "INVALID_GROUP_TYPE" | "INTERNAL_
 type GetGroupByIdCode =  "GROUP_NOT_FOUND" | "INVALID_FIELD" | "INTERNAL_ERROR"
 type UpdateGroupByIdCode = "GROUP_NOT_FOUND" | "SYNTAX_ERROR" |"INVALID_FIELD" | "REFERENCE_ERROR" | "EMPTY_FIELD" | "INTERNAL_ERROR"
 type CreateUserInGroupCode =  "INVALID_ROLE" | "USER_ALREADY_IN_GROUP" | "USER_OR_GROUP_NOT_FOUND" | "INTERNAL_ERROR"
-type GetUserInGroupByGroupIdCode = "GROUP_NOT_FOUND" | "INTERNAL_ERROR"
+type GetUserListByGroupIdCode = "GROUP_NOT_FOUND" | "INTERNAL_ERROR"
 type GetUserInGroupByKeyCode = "USER_NOT_IN_GROUP" | "INVALID_FIELD" | "INTERNAL_ERROR"
+type GetGroupListByUserIdCode = "INVALID_FIELD" | "INTERNAL_ERROR"
 type DeleteUserInGroupCode = "INTERNAL_ERROR"
 
 
@@ -32,13 +33,17 @@ interface UpdateGroupByIdInput{
     avatarFileId? : number | null
     createdAt? : Date
 }
-interface GetUserInGroupByGroupIdInput{
+interface GetUserListByGroupIdInput{
     groupId : number
 }
 interface GetUserInGroupByKeyInput<F extends UserInGroupFields[]> {
     userId: number,
     groupId: number,
     field?: F
+}
+interface GetGroupListByUserIdInput<F extends GroupFields[]>{
+    userId: number,
+    fields: F
 }
 interface DeleteUserInGroupInput{
     memberId : number,
@@ -52,12 +57,19 @@ interface MemberData{
 interface CreateGroupResponseData {
     id : number
 }
+interface GetUserListByGroupIdData{
+    members: MemberData[]
+}
 type GetGroupData<F extends GroupFields[]> = {
     [K in F[number]]: Group[K]
 }
 type GetUserInGroupData<F extends UserInGroupFields[]> = {
     [K in F[number]]: UserInGroup[K]
 }
+interface GetGroupListByUserIdData<F extends GroupFields[]>{
+    groups: GetGroupData<F>[]
+}
+
 
 export async function createGroup(
     group: CreateGroupInput, 
@@ -186,19 +198,19 @@ export async function createUserInGroup(
     connection.release()
     return {code, success, data}
 }
-export async function getUserInGroupByGroupId(
-    input: GetUserInGroupByGroupIdInput
-) : Promise<RepoResult<GetUserInGroupByGroupIdCode, MemberData[]>> {
+export async function getUserListByGroupId(
+    input: GetUserListByGroupIdInput
+) : Promise<RepoResult<GetUserListByGroupIdCode, GetUserListByGroupIdData>> {
     const sql = `SELECT user_id as userId, role FROM user_in_group WHERE group_id = ?;`
     try {
         const [rows, packet] = await pool.query<RowDataPacket[]>(sql, [input.groupId])
         if(rows.length <= 0){
             return {success : false, code : "GROUP_NOT_FOUND"}
         }
-        const data = rows as MemberData[]
-        return {success: true, data}
+        const members = rows as MemberData[]
+        return {success: true, data : {members}}
     } catch (err){
-        let code: GetUserInGroupByGroupIdCode
+        let code: GetUserListByGroupIdCode
         code = "INTERNAL_ERROR"
         const e = err as any
         return {success : false, code}
@@ -234,6 +246,33 @@ export async function getUserInGroupByKey<F extends UserInGroupFields[]>(
         }
     }
     return {success, code, data}
+}
+export async function getGroupListByUserId<F extends GroupFields[]>(
+    input : GetGroupListByUserIdInput<F>
+) : Promise<RepoResult<GetGroupListByUserIdCode, GetGroupListByUserIdData<F>>>  {
+    let success = false
+    let code : GetGroupListByUserIdCode | undefined = undefined
+    
+    const fields = getGetField(input.fields, "chat_group")    
+
+    const sql = `
+        SELECT ${fields} FROM user_in_group
+        LEFT JOIN chat_group  ON user_in_group.group_id = chat_group.id
+        WHERE user_in_group.user_id = ?;
+    `
+    try {
+        const [rows, packet] = await pool.query<RowDataPacket[]>(sql, [input.userId])
+        return {success : true, data : {groups : rows} as GetGroupListByUserIdData<F>}
+    } catch (err){
+        const e = err as any
+        if(e.code == 'ER_BAD_FIELD_ERROR')
+            code = "INVALID_FIELD"
+        else{
+            code = "INTERNAL_ERROR"
+            console.log(err)
+        }
+    }
+    return {success, code}
 }
 export async function deleteUserInGroupByKey(
     input : DeleteUserInGroupInput

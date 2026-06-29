@@ -1,7 +1,8 @@
 import {Request, Response} from "express"
-import { GetUserByIdSchema, PatchUserSchema, PutUserSchema } from "./user.dto.js"
+import { GetGroupListSchema, GetUserByIdSchema, PatchUserSchema, PutUserSchema } from "./user.dto.js"
 import { ErrorResponse } from "../../shared/types.js"
 import * as UserService from "./user.service.js"
+import { GroupService } from "group"
 
 export async function getUserById(req: Request, res: Response) {
     const dto = GetUserByIdSchema.safeParse(req.params)
@@ -28,9 +29,6 @@ export async function getUserById(req: Request, res: Response) {
 
             errorResponse = {
                 error: "NOT_FOUND",
-                detail: {
-                    id: ["Not found"]
-                },
                 message : `User with ${dto.data.id} not found`
             }
             return res.status(404).json(errorResponse)
@@ -38,7 +36,6 @@ export async function getUserById(req: Request, res: Response) {
         } else {
             errorResponse = {
                 error: "INTERNAL_ERROR",
-                detail: {server : ["Server error"]},
                 message : "Server error"
             }
             return res.status(500).json(errorResponse)
@@ -57,10 +54,7 @@ export async function putUser(req: Request, res: Response) {
     if(id != req.user!.id) {
         errorResponse = {
             error : "ACCESS_DENIED",
-            detail : {
-                id : [`User ID in the URL (${id}) does not match the authenticated user ID (${req.user!.id})`]
-            },
-            message : "You do not have permission to update this resource."
+            message : `User ID in the URL (${id}) does not match the authenticated user ID (${req.user!.id})`
         }
         return res.status(401).json(errorResponse)
     }
@@ -110,10 +104,7 @@ export async function patchUser(req: Request, res: Response) {
     if(id != req.user!.id) {
         errorResponse = {
             error : "ACCESS_DENIED",
-            detail : {
-                id : [`User ID in the URL (${id}) does not match the authenticated user ID (${req.user!.id})`]
-            },
-            message : "You do not have permission to update this resource."
+            message : `User ID in the URL (${id}) does not match the authenticated user ID (${req.user!.id})`
         }
         return res.status(401).json(errorResponse)
     }
@@ -134,16 +125,52 @@ export async function patchUser(req: Request, res: Response) {
     if(serviceResult.code == "USER_NOT_FOUND"){
         errorResponse = {
             error : "USER_NOT_FOUND",
-            detail : {id : ["Not found"]},
             message : `User with id = ${id} not found`
         }
         return res.status(404).json(errorResponse)
     } else {
         errorResponse = {
             error : "SERVER_ERROR",
-            detail : {server : ["Server error"]},
             message : `Server error`
         }
         return res.status(500).json(errorResponse)
     }
+}
+
+export async function getGroupList(req: Request, res: Response) {
+    const input = {
+        authUserId : req.user?.id,
+        userId : Number(req.params.id)
+    }
+    const dto = GetGroupListSchema.safeParse(input)
+    let errorResponse: ErrorResponse
+
+    if(!dto.success){
+
+        errorResponse = {
+            error : "INVALID_DATA",
+            detail : {...dto.error.flatten().fieldErrors, ...dto.error.flatten().formErrors},
+            message : "Invalid data"
+        }
+        return res.status(400).json(errorResponse)
+
+    }
+
+    const getGroupListResult = await GroupService.getGroupList(dto.data)
+    if(getGroupListResult.success)
+        return res.status(200).json(getGroupListResult.data)
+
+    if(getGroupListResult.code == "GROUP_LIST_ACCESS_DENIED"){
+        errorResponse = {
+            error : "GROUP_LIST_ACCESS_DENIED",
+            message : `User with id = ${input.authUserId} does not have permisson to access group list of user with id = ${input.userId}`
+        }
+        return res.status(403).json(errorResponse)
+    }
+
+    errorResponse = {
+        error : "SERVER_ERROR",
+        message : `Server error`
+    }
+    return res.status(500).json(errorResponse)
 }

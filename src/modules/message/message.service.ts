@@ -1,5 +1,5 @@
 import { ServiceResult } from "../../shared/types.js"
-import { isMember } from "group"
+import { GroupService } from "group"
 import { getFilePermission } from "file"
 import * as MessageRepo from "./message.repository.js"
 
@@ -20,7 +20,7 @@ export async function sendMessage(
     input : SendMessageInput
 ) : Promise<ServiceResult<SendMessageCode, SendMessageData>> {
 
-    const isMemberResult = await isMember({
+    const isMemberResult = await GroupService.isMember({
         groupId : input.groupId, 
         userId : input.userId
     })
